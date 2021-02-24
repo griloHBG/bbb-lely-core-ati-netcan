@@ -35,7 +35,7 @@ pkg_check_modules(LELY-COAPP REQUIRED IMPORTED_TARGET liblely-coapp)
 
 #target_link_libraries(${PROJECT_NAME} Threads::Threads)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp PID.cpp PID.h InteractionController.h)
 
 #target_include_directories(${PROJECT_NAME} PRIVATE PkgConfig::LELY-IO2)
 

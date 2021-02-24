@@ -1,3 +1,4 @@
+#include <cmath>
 #include <lely/ev/loop.hpp>
 #if _WIN32
 #include <lely/io2/win32/ixxat.hpp>
@@ -36,6 +37,10 @@
 #include <json.hpp>
 #include <thread>
 #include <atomic>
+#include "PID.h"
+#include "InteractionController.h"
+
+#define USE_FORCETORQUE_SENSOR
 
 using json = nlohmann::json;
 
@@ -608,6 +613,8 @@ can_msg linuxCanFrame2lelyCanFrame(can_frame canFrame) {
 
 int forcesensorreceivecount = 0;
 
+#ifdef USE_FORCETORQUE_SENSOR
+
 void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRouter* canRouter, std::mutex* fzMtx, std::array<std::array<float, 6>, 6>* matrix) {
     using namespace std::chrono_literals;
     std::array<int16_t, 6> sg{};
@@ -685,6 +692,8 @@ void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRout
     
         canFrame = helper.getCANFrameRequest(NetCANOEMCANMsg::OpCode::SGData_req);
         
+        PID pid{10, 1, 1};
+        
         do {
             bool sgData_ans1_arrived = false;
             
@@ -725,7 +734,7 @@ void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRout
             sharedFZ = ft[2];
             fzMtx->unlock();
 
-            std::cout << "fz: " << sharedFZ << "\n";
+            //std::cout << "fz: " << sharedFZ << "\n";
     
             //std::cout << "FT: ";
             //std::for_each(ft.begin(), ft.end(), [](const float& v) { std::cout << std::setw(10) << std::setprecision(3) << v; });
@@ -742,7 +751,30 @@ void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRout
     }
 }
 
+#endif // USE_FORCETORQUE_SENSOR
+
 /*------- END ATI-NETCANOEM-SENSOR ------- */
+
+//PID pidController{500, 0, 100, 3.141596f/2.f};
+PID pidController{500, 0, 100, 0};
+InteractionController intCtrl{100, 10};
+
+
+// Get time stamp in microseconds. From here: https://stackoverflow.com/a/49066369/6609908
+uint64_t micros()
+{
+    uint64_t us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::
+                                                                        now().time_since_epoch()).count();
+    return us;
+}
+
+uint64_t lastTime_us = 0;
+uint64_t currentTime_us = 0;
+uint64_t max_dt_us = 0;
+uint64_t min_dt_us = 9999999999;
+uint64_t mean_dt_us = 0;
+uint64_t dt_count = 0;
+uint64_t dt_us = 0;
 
 using namespace std::chrono_literals;
 using namespace lely;
@@ -799,14 +831,23 @@ private:
 //            Wait(AsyncWrite<uint32_t>(0x1010, 1, 0x73617665));
     
             std::cout << "\n--- 0x1803:03 " << "on config ---\n";
+            // set inhibt time to 10 * 100us for PDO1
+            Wait(AsyncWrite<uint16_t>(0x1800, 3, 10));
+            // set inhibt time to 10 * 100us for PDO2
+            Wait(AsyncWrite<uint16_t>(0x1801, 3, 10));
             // set inhibt time to 10 * 100us for PDO3
             Wait(AsyncWrite<uint16_t>(0x1802, 3, 10));
             // set inhibt time to 10 * 100us for PDO4
             Wait(AsyncWrite<uint16_t>(0x1803, 3, 10));
     
-            SetProfileVelocityMode();
-            //SetPositionMode();
+            //SetProfileVelocityMode();
+            //SetProfilePositionMode();
+            //SetPositionMode(); // NOT WORKING!
+            SetCurrentMode();
             // Report success (empty error code).
+    
+            lastTime_us = micros();
+            
             res({});
         } catch (canopen::SdoError& e) {
             // If one of the SDO requests resulted in an error, abort the
@@ -815,32 +856,114 @@ private:
         }
     }
     
-    void SetPositionMode(uint32_t maxFollowingError = 2000, /* qc */
-                         int32_t minPositionLimit = -2147483648, /* qc */
-                         int32_t maxPositionLimit = 2147483647 /* qc */) {
+    void SetProfilePositionMode(uint32_t maxFollowingError = 2000, /* qc 0x6065.00 */
+                         int32_t minPositionLimit = -2147483648, /* qc 0x607D.01 */
+                         int32_t maxPositionLimit = 2147483647, /* qc 0x607D.02 */
+                         uint32_t maxProfileVelocity = 25000, /* rpm 0x607F.00 */
+                         uint32_t profileVelocity = 1000, /* rpm 0x6081.00 */
+                         uint32_t profileAcceleration = 10000, /* rpm/s 0x6083.00 */
+                         uint32_t profileDeceleration = 10000, /* rpm/s 0x6084.00 */
+                         uint32_t quickstopDeceleration = 10000, /* rpm/s 0x6085.00 */
+                         int16_t motionProfileType = 0 /* 0 for linear or 1 for sin² 0x6086.00 */) {
         
         master.Command(lely::canopen::NmtCommand::STOP, id());
         master.Command(lely::canopen::NmtCommand::ENTER_PREOP, id());
         
-        // set profile velocity operation mode
-        Wait(AsyncWrite<uint8_t>(0x6060, 0, 0xFF));
+        // set profile position operation mode
+        Wait(AsyncWrite<uint8_t>(0x6060, 0, 0x01));
         
         // set max following error
-        Wait(AsyncWrite<uint32_t>(0x607F, 0, std::forward<uint32_t>(maxFollowingError)));
+        Wait(AsyncWrite<uint32_t>(0x6065, 0, reinterpret_cast<uint32_t &&>(maxFollowingError)));
         // set min position limit
-        Wait(AsyncWrite<uint32_t>(0x6083, 0, std::forward<uint32_t>(minPositionLimit)));
+        Wait(AsyncWrite<int32_t>(0x607D, 1,reinterpret_cast<int32_t &&>(minPositionLimit)));
         // set max position limit
-        Wait(AsyncWrite<uint32_t>(0x6084, 0, std::forward<uint32_t>(maxPositionLimit)));
+        Wait(AsyncWrite<int32_t>(0x607D, 2,reinterpret_cast<int32_t &&>(maxPositionLimit)));
+        
+        // set max profile velocity
+        Wait(AsyncWrite<uint32_t>(0x607F, 0, reinterpret_cast<uint32_t &&>(maxProfileVelocity)));
+        
+        // set profile velocity
+        Wait(AsyncWrite<uint32_t>(0x6081, 0, reinterpret_cast<uint32_t &&>(profileVelocity)));
+        
+        // set profile acceleration
+        Wait(AsyncWrite<uint32_t>(0x6083, 0, reinterpret_cast<uint32_t &&>(profileAcceleration)));
+        
+        // set profile deceleration
+        Wait(AsyncWrite<uint32_t>(0x6084, 0, reinterpret_cast<uint32_t &&>(profileDeceleration)));
+        
+        // set quick stop deceleration
+        Wait(AsyncWrite<uint32_t>(0x6085, 0, reinterpret_cast<uint32_t &&>(quickstopDeceleration)));
+        
+        // set motion profile type
+        Wait(AsyncWrite<int16_t>(0x6086, 0, reinterpret_cast<int16_t &&>(motionProfileType)));
         
         Shutdown();
         SwitchOn();
         
         master.Command(lely::canopen::NmtCommand::START, id());
         
-        // set position
-        Wait(AsyncWrite<int32_t>(0x6062, 0, 0));
-        // set Controlword
+        // set target position
+        Wait(AsyncWrite<int32_t>(0x607A, 0, 0));
+        // set Controlword to start absolute positioning immediately
+        StartAbsPositioningImmediate();
+    }
+    
+    
+    
+    void SetCurrentMode(uint16_t continuousCurrentLimit = 5000, /* mA 0x6410.01 */
+                                uint16_t maxSpeed = 9500, /* rpm 0x6410.04 */
+                                uint16_t thermalTimeConstantWinding = 70 /* ? 0x6410.05 */
+                                ) {
+        
+        master.Command(lely::canopen::NmtCommand::STOP, id());
+        master.Command(lely::canopen::NmtCommand::ENTER_PREOP, id());
+        
+        // set profile position operation mode
+        Wait(AsyncWrite<int8_t>(0x6060, 0, 0xFD));
+        
+        // set max following error
+        Wait(AsyncWrite<uint16_t>(0x6410, 1, reinterpret_cast<uint16_t &&>(continuousCurrentLimit)));
+        // set min position limit
+        Wait(AsyncWrite<uint16_t>(0x6410, 4, reinterpret_cast<uint16_t &&>(maxSpeed)));
+        // set max position limit
+        Wait(AsyncWrite<uint16_t>(0x6410, 5,reinterpret_cast<uint16_t &&>(thermalTimeConstantWinding)));
+        
+        Shutdown();
         SwitchOn();
+        
+        master.Command(lely::canopen::NmtCommand::START, id());
+        
+        // set target position
+        Wait(AsyncWrite<int16_t>(0x2030, 0, 0));
+    }
+    
+    void SetPositionMode(uint32_t maxFollowingError = 2000, /* qc 0x6065.00 */
+                                int32_t minPositionLimit = -2147483648, /* qc 0x607D.01 */
+                                int32_t maxPositionLimit = 2147483647 /* qc 0x607D.02 */) {
+        
+        master.Command(lely::canopen::NmtCommand::STOP, id());
+        master.Command(lely::canopen::NmtCommand::ENTER_PREOP, id());
+        
+        // set profile position operation mode
+        Wait(AsyncWrite<uint8_t>(0x6060, 0, 0xFF));
+        
+        // set max following error
+        Wait(AsyncWrite<uint32_t>(0x6065, 0, reinterpret_cast<uint32_t &&>(maxFollowingError)));
+        // set min position limit
+        Wait(AsyncWrite<int32_t>(0x607D, 1,reinterpret_cast<int32_t &&>(minPositionLimit)));
+        // set max position limit
+        Wait(AsyncWrite<int32_t>(0x607D, 2,reinterpret_cast<int32_t &&>(maxPositionLimit)));
+        
+        Shutdown();
+        SwitchOn();
+        
+        master.Command(lely::canopen::NmtCommand::START, id());
+        
+        // set target position
+        //Wait(AsyncWrite<int32_t>(0x2062, 0, 0));
+        // set Controlword to start absolute positioning immediately
+        
+        StartAbsPositioningImmediate();
     }
     
     void SetProfileVelocityMode(uint32_t maxProfileVelocity = 25000, /* rpm */
@@ -885,6 +1008,10 @@ private:
         Wait(AsyncWrite<uint16_t>(0x6040, 0, 0x000F));
     }
     
+    void StartAbsPositioningImmediate() {
+        Wait(AsyncWrite<uint16_t>(0x6040, 0, 0x003F));
+    }
+    
     int maxVel = 2000;
     int minVel = -2000;
     
@@ -906,13 +1033,72 @@ private:
         */
         //tpdo_mapped[0x60FF][0] = static_cast<int32_t>(velocity);
         
-        //for position
-        //tpdo_mapped[0x2062][0] = static_cast<int32_t>((sharedFZ + 21)*10*2);
+        //for profile position
+        //tpdo_mapped[0x607A][0] = static_cast<int32_t>((sharedFZ + 21)*10);
+        //tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x003F);
+        //master.TpdoEvent(2);
+    
+        //for non-profile position
+        //std::cout << "sharedFZ transformed: " << (sharedFZ + 21.f)*10.f << std::endl;
+        //Wait(AsyncWrite<int32_t>(0x2062, 0, static_cast<int32_t>((sharedFZ + 21.f)*10.f)));
         
         //for velocity
-        tpdo_mapped[0x60FF][0] = static_cast<int32_t>((sharedFZ + 21)*10*2);
-        tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x000F);
-        master.TpdoEvent(3);
+        //tpdo_mapped[0x60FF][0] = static_cast<int32_t>((sharedFZ + 21)*10*2);
+        //tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x000F);
+        //master.TpdoEvent(3);
+    
+        //for current position MOTORZAO
+        //std::cout << "sharedFZ transformed: " << static_cast<int16_t>(sharedFZ) << std::endl
+        //<< "actual position: " << static_cast<int32_t>(rpdo_mapped[0x6064][0]) << std::endl
+        //<< "actual velocity: " << static_cast<int32_t>(rpdo_mapped[0x606C][0]) << std::endl
+        //<< "actual current: " << static_cast<int16_t>(rpdo_mapped[0x6078][0]) << std::endl;
+        ////Wait(AsyncWrite<int32_t>(0x2030, 0, static_cast<int32_t>(sharedFZ + 21.f)));
+        //tpdo_mapped[0x2030][0] = static_cast<int16_t>(sharedFZ);
+        //tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x0003);
+        //master.TpdoEvent(1);
+        
+        currentTime_us = micros();
+        dt_us = currentTime_us - lastTime_us;
+        
+        //for PID controller
+        // angular position in radians
+        currentPosition = (static_cast<int32_t>(rpdo_mapped[0x6064][0])*2.f*3.141596f/2000.f)/gear;
+        // angular velocity in rad/s
+        currentVelocity = (static_cast<int32_t>(rpdo_mapped[0x606C][0])*3.141596f/30.f)/gear;
+        // torque in Newton*meter
+        //currentTorque = ((static_cast<int16_t>(rpdo_mapped[0x6078][0])/1000.f)*motorzaoTorqueConstant/1000.f)*gear;
+        currentTorque = (sharedFZ+21)*.1f;
+        
+        angularCorrection = intCtrl.getControlSignal(currentTorque, dt_us/1000000.f);
+        
+        controlSignal = -pidController.getControlSignal(currentPosition - angularCorrection, currentVelocity, 0);
+        
+        if (std::fabs(controlSignal) > 5000) {
+            std::cout << "controlSignal is too large: " << controlSignal << ". limiting to 5000" << std::endl;
+            controlSignal = 4500 * ( (float{0} < controlSignal) - (controlSignal < float{0}) );
+        }
+        
+        tpdo_mapped[0x2030][0] = static_cast<int16_t>(controlSignal);
+        tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x0003);
+        
+        if(++printCounter % 10 == 0) {
+            printCounter = 0;
+            std::cout << "pos:\t" << std::setw(10) << std::setprecision(2) << currentPosition << ";"
+                      << "\trawPos;\t" << std::setw(10) << std::setprecision(2)
+                      << static_cast<int32_t>(rpdo_mapped[0x6064][0]) << ";"
+                      << "\tvel;\t" << std::setw(10) << std::setprecision(2) << currentVelocity << ";"
+                      << "\tcur;\t" << std::setw(10) << std::setprecision(2) << currentTorque << ";"
+                      << "\tu;\t" << std::setw(10) << std::setprecision(2) << controlSignal << ";"
+                      << "\tposE;\t" << std::setw(10) << std::setprecision(2) << pidController.errorPosition << ";"
+                      << "\tdt;\t" << std::setw(15) << std::setprecision(2) << dt_us << ";" << std::endl;
+        }
+        
+        max_dt_us = std::max(max_dt_us, dt_us) > 7840493192397 ? 0 : std::max(max_dt_us, dt_us);
+        min_dt_us = std::min(min_dt_us, dt_us);
+    
+        lastTime_us = currentTime_us;
+        dt_count++;
+        mean_dt_us += dt_us;
         
         /*if (abs((int)velocity % 100) == 3)
         {
@@ -938,6 +1124,11 @@ private:
             Wait(AsyncWrite<uint16_t>(0x1017, 0, 0));
             // Disable the heartbeat consumer on the slave.
             Wait(AsyncWrite<uint32_t>(0x1016, 1, 0));
+    
+            master.Command(lely::canopen::NmtCommand::RESET_NODE);
+            
+            std::cout << "max_dt_ms: " << max_dt_us << "\tmin_dt_ms: " << min_dt_us << "\tmean_dt_ms: " << mean_dt_us / (1.f * dt_count) << std::endl;
+            
             // shutdown
             Shutdown();
     
@@ -950,6 +1141,16 @@ private:
     float velocity = maxVel;
     float flag = 0;
     float direction = 3;
+    float currentPosition;
+    float currentVelocity;
+    float currentTorque;
+    float motorzaoTorqueConstant = 38.5f;
+    float gear = 3.5f;
+    float controlSignal = 0;
+    
+    float angularCorrection = 0;
+    
+    int printCounter = 0;
 };
 
 class MyCoTask : public lely::ev::CoTask {
@@ -1031,7 +1232,7 @@ main() {
     // means every user-defined callback for a CANopen event will be posted as a
     // task on the event loop, instead of being invoked during the event
     // processing by the stack
-    canopen::AsyncMaster master(timer, chanCANopenMaster, "/home/debian/lely-bbb/master.dcf", "/home/debian/lely-bbb/master.bin", 2);
+    canopen::AsyncMaster master(timer, chanCANopenMaster, "/home/debian/lely-bbb/master-motorzao.dcf", "/home/debian/lely-bbb/master-motorzao.bin", 2);
 /*    master.OnRpdo([&](int i, ::std::error_code ec, const void* numsei, ::std::size_t s){
         std::cout << i << "\t" << ec << "\t" << numsei << "\t" << s << "\n";
     });
@@ -1079,17 +1280,19 @@ main() {
     // node' command.
     master.Reset();
     
+    master.Command(lely::canopen::NmtCommand::RESET_NODE);
+    master.Command(lely::canopen::NmtCommand::RESET_COMM);
+    master.Command(lely::canopen::NmtCommand::STOP);
+    master.Command(lely::canopen::NmtCommand::ENTER_PREOP);
+    
     // making TPDO 1 synchronous
     master.Write<uint8_t>(0x1800, 2, 0x01);
     // making TPDO 2 synchronous
     master.Write<uint8_t>(0x1801, 2, 0x01);
     // making TPDO 3 synchronous
     master.Write<uint8_t>(0x1802, 2, 0x01);
-    
-    master.Command(lely::canopen::NmtCommand::RESET_NODE);
-    master.Command(lely::canopen::NmtCommand::RESET_COMM);
-    master.Command(lely::canopen::NmtCommand::STOP);
-    master.Command(lely::canopen::NmtCommand::ENTER_PREOP);
+    // making TPDO 4 synchronous
+    //master.Write<uint8_t>(0x1803, 2, 0x01);
 #endif // !NO_MASTER
 
 #if _WIN32
@@ -1099,8 +1302,6 @@ main() {
     std::thread workers[] = {std::thread([&]() { loop.run(); }),
                            std::thread([&]() { loop.run(); })};
 #endif
-
-#define USE_FORCETORQUE_SENSOR
 
 #ifdef USE_FORCETORQUE_SENSOR
 /*--------------INIT ATI-NETCANOEM--------------*/
