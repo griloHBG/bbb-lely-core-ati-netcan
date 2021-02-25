@@ -13,7 +13,7 @@ master:
   # heartbeat_consumer: true
   # heartbeat_producer: 0 # ms
   # emcy_inhibit_time: 0 # 100 us
-  sync_period: 8000 # us
+  sync_period: 10000 # us
   # sync_window: 0 # us
   # sync_overflow: 0
   # error_behavior: {1: 0x00}

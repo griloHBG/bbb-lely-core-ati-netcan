@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
+
 project(lely_bbb)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
@@ -24,8 +25,6 @@ find_package(PkgConfig REQUIRED)
 #find_package(Threads REQUIRED)
 
 pkg_check_modules(LELY-COAPP REQUIRED IMPORTED_TARGET liblely-coapp)
-
-
 #set(THREADS_PREFER_PTHREAD_FLAG ON)
 #find_package(Threads REQUIRED)
 

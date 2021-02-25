@@ -32,6 +32,7 @@
 #include <unistd.h>
 
 #include <sstream>
+#include <fstream>
 #include <iomanip>
 
 #include <json.hpp>
@@ -41,6 +42,7 @@
 #include "InteractionController.h"
 
 #define USE_FORCETORQUE_SENSOR
+//#undef USE_FORCETORQUE_SENSOR
 
 using json = nlohmann::json;
 
@@ -48,6 +50,14 @@ typedef struct can_frame CANframe;
 typedef struct ifreq InterfReq;
 typedef struct sockaddr_can SockAddrCan;
 typedef struct timeval TimeVal;
+
+
+constexpr int logSize = 250;
+
+std::array<float, logSize> logPosition;
+std::array<float, logSize> logForceZ;
+std::array<float, logSize> logDt;
+int logCounter = 0;
 
 void printCANFrame(const CANframe&& frame)
 {
@@ -745,7 +755,7 @@ void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRout
             
             //std::this_thread::yield();
             
-            std::this_thread::sleep_for(10ms);
+            std::this_thread::sleep_for(5ms);
             
         }while(keepRunningAti);
     }
@@ -755,9 +765,16 @@ void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRout
 
 /*------- END ATI-NETCANOEM-SENSOR ------- */
 
-//PID pidController{500, 0, 100, 3.141596f/2.f};
-PID pidController{500, 0, 100, 0};
-InteractionController intCtrl{100, 10};
+constexpr float referencePosition = -3.141596f/3.f;
+constexpr float gainP = 1000.f;
+constexpr float gainI = 0.f;
+constexpr float gainD = 100.f;
+
+constexpr float gainKy = 20.f;
+constexpr float gainBy = 8.f;
+
+PID pidController{gainP, gainI, gainD, referencePosition};
+InteractionController intCtrl{gainKy, gainBy};
 
 
 // Get time stamp in microseconds. From here: https://stackoverflow.com/a/49066369/6609908
@@ -934,7 +951,7 @@ private:
         master.Command(lely::canopen::NmtCommand::START, id());
         
         // set target position
-        Wait(AsyncWrite<int16_t>(0x2030, 0, 0));
+        //Wait(AsyncWrite<int16_t>(0x2030, 0, 0));
     }
     
     void SetPositionMode(uint32_t maxFollowingError = 2000, /* qc 0x6065.00 */
@@ -1063,25 +1080,44 @@ private:
         //for PID controller
         // angular position in radians
         currentPosition = (static_cast<int32_t>(rpdo_mapped[0x6064][0])*2.f*3.141596f/2000.f)/gear;
+        
         // angular velocity in rad/s
         currentVelocity = (static_cast<int32_t>(rpdo_mapped[0x606C][0])*3.141596f/30.f)/gear;
+        
         // torque in Newton*meter
         //currentTorque = ((static_cast<int16_t>(rpdo_mapped[0x6078][0])/1000.f)*motorzaoTorqueConstant/1000.f)*gear;
+        
+        //currentTorque from force-torque-sensor
         currentTorque = (sharedFZ+21)*.1f;
+        
+        //currentTorque = intCtrl.getTorqueFromObserver(controlSignal, currentVelocity, dt_us/1000000.f);
         
         angularCorrection = intCtrl.getControlSignal(currentTorque, dt_us/1000000.f);
         
         controlSignal = -pidController.getControlSignal(currentPosition - angularCorrection, currentVelocity, 0);
         
         if (std::fabs(controlSignal) > 5000) {
-            std::cout << "controlSignal is too large: " << controlSignal << ". limiting to 5000" << std::endl;
+            //std::cout << "controlSignal is too large: " << controlSignal << ". limiting to 5000" << std::endl;
             controlSignal = 4500 * ( (float{0} < controlSignal) - (controlSignal < float{0}) );
         }
         
         tpdo_mapped[0x2030][0] = static_cast<int16_t>(controlSignal);
         tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x0003);
+    
+    
+        if (logCounter < logSize) {
+            logPosition[logCounter] = currentPosition;
+            logForceZ[logCounter] = currentTorque;
+            logDt[logCounter] = dt_us/1000.f;
+            logCounter++;
+            //std::cout << logCounter << std::endl;
+        }
+        else
+        {
+            std::cout << logSize << " data points recorded!" << std::endl;
+        }
         
-        if(++printCounter % 10 == 0) {
+        /*if(++printCounter % 10 == 0) {
             printCounter = 0;
             std::cout << "pos:\t" << std::setw(10) << std::setprecision(2) << currentPosition << ";"
                       << "\trawPos;\t" << std::setw(10) << std::setprecision(2)
@@ -1091,14 +1127,14 @@ private:
                       << "\tu;\t" << std::setw(10) << std::setprecision(2) << controlSignal << ";"
                       << "\tposE;\t" << std::setw(10) << std::setprecision(2) << pidController.errorPosition << ";"
                       << "\tdt;\t" << std::setw(15) << std::setprecision(2) << dt_us << ";" << std::endl;
-        }
+        }*/
         
-        max_dt_us = std::max(max_dt_us, dt_us) > 7840493192397 ? 0 : std::max(max_dt_us, dt_us);
-        min_dt_us = std::min(min_dt_us, dt_us);
+        //max_dt_us = std::max(max_dt_us, dt_us) > 7840493192397 ? 0 : std::max(max_dt_us, dt_us);
+        //min_dt_us = std::min(min_dt_us, dt_us);
     
         lastTime_us = currentTime_us;
-        dt_count++;
-        mean_dt_us += dt_us;
+        //dt_count++;
+        //mean_dt_us += dt_us;
         
         /*if (abs((int)velocity % 100) == 3)
         {
@@ -1640,6 +1676,20 @@ main() {
     // Wait for the worker threads to finish.
   for (auto& worker : workers) worker.join();
 #endif
+    
+    std::ofstream logPositionForceZ;
+    logPositionForceZ.open("/home/debian/lely-bbb/qd" + std::to_string(referencePosition) + "_K" + std::to_string(gainKy) + "_B" + std::to_string(gainBy)+ ".csv");
+    
+    logPositionForceZ   << std::setw(20) << std::setprecision(5) << "q [rad]" << ","
+                        << std::setw(20) << std::setprecision(5) << "tau [Nm]" << ","
+                        << std::setw(20) << std::setprecision(5) << "dt [ms]" << std::endl;
+    for(int i = 0; i < logSize; ++i) {
+        logPositionForceZ   << std::setw(20) << std::setprecision(5) << logPosition[i] << ","
+                            << std::setw(20) << std::setprecision(5) << logForceZ[i] << ","
+                            << std::setw(20) << std::setprecision(5) << logDt[i] << std::endl;
+    }
+    
+    logPositionForceZ.close();
     
     return 0;
 }
