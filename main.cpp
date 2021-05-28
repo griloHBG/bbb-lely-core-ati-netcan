@@ -848,13 +848,13 @@ private:
 //            Wait(AsyncWrite<uint32_t>(0x1010, 1, 0x73617665));
     
             std::cout << "\n--- 0x1803:03 " << "on config ---\n";
-            // set inhibt time to 10 * 100us for PDO1
+            // set inhibit time to 10 * 100us for PDO1
             Wait(AsyncWrite<uint16_t>(0x1800, 3, 10));
-            // set inhibt time to 10 * 100us for PDO2
+            // set inhibit time to 10 * 100us for PDO2
             Wait(AsyncWrite<uint16_t>(0x1801, 3, 10));
-            // set inhibt time to 10 * 100us for PDO3
+            // set inhibit time to 10 * 100us for PDO3
             Wait(AsyncWrite<uint16_t>(0x1802, 3, 10));
-            // set inhibt time to 10 * 100us for PDO4
+            // set inhibit time to 10 * 100us for PDO4
             Wait(AsyncWrite<uint16_t>(0x1803, 3, 10));
     
             //SetProfileVelocityMode();
@@ -938,11 +938,11 @@ private:
         // set profile position operation mode
         Wait(AsyncWrite<int8_t>(0x6060, 0, 0xFD));
         
-        // set max following error
+        
         Wait(AsyncWrite<uint16_t>(0x6410, 1, reinterpret_cast<uint16_t &&>(continuousCurrentLimit)));
-        // set min position limit
+        
         Wait(AsyncWrite<uint16_t>(0x6410, 4, reinterpret_cast<uint16_t &&>(maxSpeed)));
-        // set max position limit
+        
         Wait(AsyncWrite<uint16_t>(0x6410, 5,reinterpret_cast<uint16_t &&>(thermalTimeConstantWinding)));
         
         Shutdown();
@@ -1114,7 +1114,7 @@ private:
         }
         else
         {
-            std::cout << logSize << " data points recorded!" << std::endl;
+            //std::cout << logSize << " data points recorded!" << std::endl;
         }
         
         /*if(++printCounter % 10 == 0) {
@@ -1268,7 +1268,8 @@ main() {
     // means every user-defined callback for a CANopen event will be posted as a
     // task on the event loop, instead of being invoked during the event
     // processing by the stack
-    canopen::AsyncMaster master(timer, chanCANopenMaster, "/home/debian/lely-bbb/master-motorzao.dcf", "/home/debian/lely-bbb/master-motorzao.bin", 2);
+    canopen::AsyncMaster master(timer, chanCANopenMaster, "/home/debian/lely-bbb/master-dcf-motorzao-current-3000.dcf", "/home/debian/lely-bbb/master-dcf-motorzao-current-3000.bin", 2);
+    //canopen::AsyncMaster master(timer, chanCANopenMaster, "/home/debian/lely-bbb/master-motorzinho.dcf", "/home/debian/lely-bbb/master-motorzinho.bin", 2);
 /*    master.OnRpdo([&](int i, ::std::error_code ec, const void* numsei, ::std::size_t s){
         std::cout << i << "\t" << ec << "\t" << numsei << "\t" << s << "\n";
     });
@@ -1276,6 +1277,7 @@ main() {
     /*master.OnSync([&](int i, ::std::error_code ec, const void* numsei,::std::size_t s){
         std::cout << i << "\t" << ec << "\t" << numsei << "\t" << s << "\n";
     });*/
+    
 #endif // !NO_MASTER
 
 #if !defined(NO_MASTER) || !defined(NO_SLAVE)

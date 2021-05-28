@@ -5,22 +5,19 @@
 ;******************************************************************
 
 [FileInfo]
-FileName=epos_com_motorzao.dcf
-FileVersion=1
+FileName=ObjectDictionary.eds	
+FileVersion=1      
 FileRevision=16
-Description=
+Description=Electronic Data Sheet for EPOS 
 EDSVersion=4.0
 
-CreationTime=05:21PM
-CreationDate=02-23-2021
-CreatedBy=Gustavo
+CreationTime=08:00AM
+CreationDate=04-15-2003
+CreatedBy=SAN
 
-ModificationTime=05:21PM
-ModificationDate=02-23-2021
-ModifiedBy=Gustavo
-
-;[ToolInfos]
-;ToolVersion=DtmEpos 3.6.2.0
+ModificationTime=09:00AM
+ModificationDate=10-30-2006
+ModifiedBy=OTH
 
 [Comments]
 Lines=4
@@ -44,12 +41,12 @@ BaudRate_800=1
 BaudRate_500=1
 BaudRate_250=1
 BaudRate_125=1
-BaudRate_50=1
+BaudRate_50=1	
 BaudRate_20=1
 BaudRate_10=0
 
-SimpleBootUpMaster=0
-SimpleBootUpSlave=1
+SimpleBootUpMaster=0	
+SimpleBootUpSlave=1 
 Granularity=8
 DynamicChannelsSupported=0
 GroupMessaging=0
@@ -58,15 +55,6 @@ NrOfRXPDO=4
 NrOfTXPDO=4
 
 LSS_Supported=0
-
-[DeviceComissioning]
-NodeID=1
-NodeName=EPOS
-Baudrate=38400
-NetNumber=0
-NetworkName=Network 0
-CANopenManager=0
-LSS_SerialNumber=0x09007003
 
 [DummyUsage]
 Dummy0001=0
@@ -168,44 +156,44 @@ SupportedObjects=50
 6=0x2005
 7=0x2008
 8=0x2009
-9=0x200C
-10=0x2010
-11=0x2011
-12=0x2012
+9=0x200C   
+10=0x2010   
+11=0x2011   
+12=0x2012   
 13=0x2013
-14=0x2014
-15=0x2015
-16=0x2016
-17=0x2017
-18=0x2018
-19=0x2019
-20=0x201A
-21=0x201B
-22=0x2020
-23=0x2021
-24=0x2022
-25=0x2023
-26=0x2024
-27=0x2025
-28=0x2026
-29=0x2027
-30=0x2028
-31=0x2029
+14=0x2014		    
+15=0x2015		    
+16=0x2016		    
+17=0x2017		    
+18=0x2018		    
+19=0x2019		    
+20=0x201A		    
+21=0x201B		    
+22=0x2020		    				   
+23=0x2021		    				   
+24=0x2022		    
+25=0x2023		    
+26=0x2024		    
+27=0x2025		    
+28=0x2026		    
+29=0x2027		    
+30=0x2028		    
+31=0x2029   		    
 32=0x202A
 33=0x202B
 34=0x202C
 35=0x202D
 36=0x2030
-37=0x2062
-38=0x206B
-39=0x2070
-40=0x2071
-41=0x2074
-42=0x2078
+37=0x2062		    
+38=0x206B		    
+39=0x2070		    
+40=0x2071		    
+41=0x2074		    
+42=0x2078		    
 43=0x2079
 44=0x207C
-45=0x2080
-46=0x2081
+45=0x2080		    
+46=0x2081		    
 47=0x20F4
 48=0x2210
 49=0x2300
@@ -217,7 +205,6 @@ DataType=0x7
 AccessType=RO
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x00020192
 
 [1001]
 ParameterName=Error Register
@@ -287,7 +274,6 @@ AccessType=rw
 DefaultValue=0x80
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x00000080
 
 [1008]
 ParameterName=Device Name
@@ -295,7 +281,6 @@ DataType=0x9
 AccessType=Const
 PDOMapping=0
 ObjFlags=1
-ParameterValue=EPOS
 
 [100C]
 ParameterName=Guard Time
@@ -304,7 +289,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [100D]
 ParameterName=Life Time Factor
@@ -313,7 +297,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [1010]
 SubNumber=2
@@ -369,7 +352,6 @@ AccessType=ro
 DefaultValue=$NODEID+0x80
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x00000081
 
 [1016]
 SubNumber=3
@@ -385,22 +367,20 @@ PDOMapping=0
 ObjFlags=3
 
 [1016sub1]
-ParameterName=Consumer 1 Heartbeat Time
+ParameterName=Consumer 1 Heartbeat Time 
 DataType=0x7
 AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [1016sub2]
-ParameterName=Consumer 2 Heartbeat Time
+ParameterName=Consumer 2 Heartbeat Time 
 DataType=0x7
 AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [1017]
 ParameterName=Producer Heartbeat Time
@@ -409,7 +389,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [1018]
 SubNumber=5
@@ -430,7 +409,6 @@ DataType=0x7
 AccessType=ro
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x000000FB
 
 [1018sub2]
 ParameterName=Product Code
@@ -438,7 +416,6 @@ DataType=0x7
 AccessType=ro
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x62110000
 
 [1018sub3]
 ParameterName=Revision Number
@@ -446,7 +423,6 @@ DataType=0x7
 AccessType=ro
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x20320000
 
 [1018sub4]
 ParameterName=Serial Number
@@ -454,7 +430,6 @@ DataType=0x7
 AccessType=ro
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x09007003
 
 [1020]
 SubNumber=3
@@ -475,7 +450,6 @@ DataType=0x7
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1020sub2]
 ParameterName=Configuration Time
@@ -483,7 +457,6 @@ DataType=0x7
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 
 ;******************************************************************
@@ -510,7 +483,6 @@ AccessType=ro
 DefaultValue=$NODEID+0x600
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x00000601
 
 [1200sub2]
 ParameterName=SDO COB-ID Server->Client (tx)
@@ -519,7 +491,6 @@ AccessType=ro
 DefaultValue=$NODEID+0x580
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x00000581
 
 ;******************************************************************
 ;	Receive PDO 1 parameter
@@ -545,7 +516,6 @@ AccessType=rw
 DefaultValue=$NODEID+0x200
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000201
 
 [1400sub2]
 ParameterName=Transmission Type
@@ -554,7 +524,6 @@ AccessType=rw
 DefaultValue=255
 PDOMapping=0
 ObjFlags=0
-ParameterValue=255
 
 ;******************************************************************
 ;	Receive PDO 2 parameter
@@ -580,7 +549,6 @@ AccessType=rw
 DefaultValue=$NODEID+0x0300
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x80000301
 
 [1401sub2]
 ParameterName=Transmission Type
@@ -589,7 +557,6 @@ AccessType=rw
 DefaultValue=255
 PDOMapping=0
 ObjFlags=0
-ParameterValue=255
 
 ;******************************************************************
 ;	Receive PDO 3 parameter
@@ -615,7 +582,6 @@ AccessType=rw
 DefaultValue=$NODEID+0x0400
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000401
 
 [1402sub2]
 ParameterName=Transmission Type
@@ -624,7 +590,6 @@ AccessType=rw
 DefaultValue=255
 PDOMapping=0
 ObjFlags=0
-ParameterValue=255
 
 ;******************************************************************
 ;	Receive PDO 4 parameter
@@ -650,7 +615,6 @@ AccessType=rw
 DefaultValue=$NODEID+0x0500
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000501
 
 [1403sub2]
 ParameterName=Transmission Type
@@ -659,7 +623,6 @@ AccessType=rw
 DefaultValue=255
 PDOMapping=0
 ObjFlags=0
-ParameterValue=255
 
 ;******************************************************************
 ;	Receive PDO 1 mapping
@@ -679,7 +642,6 @@ HighLimit=8
 DefaultValue=1
 PDOMapping=0
 ObjFlags=0
-ParameterValue=3
 
 [1600sub1]
 ParameterName=1st Mapped Object in RxPDO 1
@@ -688,7 +650,6 @@ AccessType=rw
 DefaultValue=0x60400010
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x20620020
 
 [1600sub2]
 ParameterName=2nd Mapped Object in RxPDO 1
@@ -697,7 +658,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x20300010
 
 [1600sub3]
 ParameterName=3rd Mapped Object in RxPDO 1
@@ -706,7 +666,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x60400010
 
 [1600sub4]
 ParameterName=4th Mapped Object in RxPDO 1
@@ -715,7 +674,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1600sub5]
 ParameterName=5th Mapped Object in RxPDO 1
@@ -724,7 +682,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1600sub6]
 ParameterName=6th Mapped Object in RxPDO 1
@@ -733,7 +690,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1600sub7]
 ParameterName=7th Mapped Object in RxPDO 1
@@ -742,7 +698,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1600sub8]
 ParameterName=8th Mapped Object in RxPDO 1
@@ -751,7 +706,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 ;******************************************************************
 ;	Receive PDO 2 mapping
@@ -771,7 +725,6 @@ HighLimit=8
 DefaultValue=2
 PDOMapping=0
 ObjFlags=0
-ParameterValue=1
 
 [1601sub1]
 ParameterName=1st Mapped Object in RxPDO 2
@@ -780,7 +733,6 @@ AccessType=rw
 DefaultValue=0x60400010
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x206B0020
 
 [1601sub2]
 ParameterName=2nd Mapped Object in RxPDO 2
@@ -789,7 +741,6 @@ AccessType=rw
 DefaultValue=0x60600008
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1601sub3]
 ParameterName=3rd Mapped Object in RxPDO 2
@@ -798,7 +749,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1601sub4]
 ParameterName=4th Mapped Object in RxPDO 2
@@ -807,7 +757,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1601sub5]
 ParameterName=5th Mapped Object in RxPDO 2
@@ -816,7 +765,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1601sub6]
 ParameterName=6th Mapped Object in RxPDO 2
@@ -825,7 +773,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1601sub7]
 ParameterName=7th Mapped Object in RxPDO 2
@@ -834,7 +781,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1601sub8]
 ParameterName=8th Mapped Object in RxPDO 2
@@ -843,7 +789,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 ;******************************************************************
 ;	Receive PDO 3 mapping
@@ -863,7 +808,6 @@ HighLimit=8
 DefaultValue=2
 PDOMapping=0
 ObjFlags=0
-ParameterValue=2
 
 [1602sub1]
 ParameterName=1st Mapped Object in RxPDO 3
@@ -872,7 +816,6 @@ AccessType=rw
 DefaultValue=0x60400010
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x60400010
 
 [1602sub2]
 ParameterName=2nd Mapped Object in RxPDO 3
@@ -881,7 +824,6 @@ AccessType=rw
 DefaultValue=0x607A0020
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x607A0020
 
 [1602sub3]
 ParameterName=3rd Mapped Object in RxPDO 3
@@ -890,7 +832,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1602sub4]
 ParameterName=4th Mapped Object in RxPDO 3
@@ -899,7 +840,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1602sub5]
 ParameterName=5th Mapped Object in RxPDO 3
@@ -908,7 +848,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1602sub6]
 ParameterName=6th Mapped Object in RxPDO 3
@@ -917,7 +856,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1602sub7]
 ParameterName=7th Mapped Object in RxPDO 3
@@ -926,7 +864,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1602sub8]
 ParameterName=8th Mapped Object in RxPDO 3
@@ -935,7 +872,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 ;******************************************************************
 ;	Receive PDO 4 mapping
@@ -955,7 +891,6 @@ HighLimit=8
 DefaultValue=2
 PDOMapping=0
 ObjFlags=0
-ParameterValue=2
 
 [1603sub1]
 ParameterName=1st Mapped Object in RxPDO 4
@@ -964,7 +899,6 @@ AccessType=rw
 DefaultValue=0x60400010
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x60400010
 
 [1603sub2]
 ParameterName=2nd Mapped Object in RxPDO 4
@@ -973,7 +907,6 @@ AccessType=rw
 DefaultValue=0x60FF0020
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x60FF0020
 
 [1603sub3]
 ParameterName=3rd Mapped Object in RxPDO 4
@@ -982,7 +915,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1603sub4]
 ParameterName=4th Mapped Object in RxPDO 4
@@ -991,7 +923,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1603sub5]
 ParameterName=5th Mapped Object in RxPDO 4
@@ -1000,7 +931,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1603sub6]
 ParameterName=6th Mapped Object in RxPDO 4
@@ -1009,7 +939,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1603sub7]
 ParameterName=7th Mapped Object in RxPDO 4
@@ -1018,7 +947,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1603sub8]
 ParameterName=8th Mapped Object in RxPDO 4
@@ -1027,7 +955,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 ;******************************************************************
 ;	Transmit PDO 1 parameter
@@ -1053,7 +980,6 @@ AccessType=rw
 DefaultValue=$NODEID+0x40000180
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000181
 
 [1800sub2]
 ParameterName=Transmission Type
@@ -1062,7 +988,6 @@ AccessType=rw
 DefaultValue=255
 PDOMapping=0
 ObjFlags=0
-ParameterValue=1
 
 [1800sub3]
 ParameterName=Inhibit Time
@@ -1071,7 +996,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=10
 
 ;******************************************************************
 ;	Transmit PDO 2 parameter
@@ -1097,7 +1021,6 @@ AccessType=rw
 DefaultValue=$NODEID+0xC0000280
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x80000281
 
 [1801sub2]
 ParameterName=Transmission Type
@@ -1106,7 +1029,6 @@ AccessType=rw
 DefaultValue=255
 PDOMapping=0
 ObjFlags=0
-ParameterValue=1
 
 [1801sub3]
 ParameterName=Inhibit Time
@@ -1115,7 +1037,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=10
 
 ;******************************************************************
 ;	Transmit PDO 3 parameter
@@ -1141,7 +1062,6 @@ AccessType=rw
 DefaultValue=$NODEID+0xC0000380
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000381
 
 [1802sub2]
 ParameterName=Transmission Type
@@ -1150,7 +1070,6 @@ AccessType=rw
 DefaultValue=255
 PDOMapping=0
 ObjFlags=0
-ParameterValue=255
 
 [1802sub3]
 ParameterName=Inhibit Time
@@ -1159,7 +1078,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=10
 
 ;******************************************************************
 ;	Transmit PDO 4 parameter
@@ -1185,7 +1103,6 @@ AccessType=rw
 DefaultValue=$NODEID+0xC0000480
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000481
 
 [1803sub2]
 ParameterName=Transmission Type
@@ -1202,7 +1119,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 ;******************************************************************
 ;	Transmit PDO 1 mapping
@@ -1222,7 +1138,6 @@ HighLimit=8
 DefaultValue=1
 PDOMapping=0
 ObjFlags=0
-ParameterValue=3
 
 [1A00sub1]
 ParameterName=1st Mapped Object in TxPDO 1
@@ -1231,7 +1146,6 @@ AccessType=rw
 DefaultValue=0x60410010
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x60640020
 
 [1A00sub2]
 ParameterName=2nd Mapped Object in TxPDO 1
@@ -1240,7 +1154,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x60780010
 
 [1A00sub3]
 ParameterName=3rd Mapped Object in TxPDO 1
@@ -1249,7 +1162,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x60410010
 
 [1A00sub4]
 ParameterName=4th Mapped Object in TxPDO 1
@@ -1258,7 +1170,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A00sub5]
 ParameterName=5th Mapped Object in TxPDO 1
@@ -1267,7 +1178,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A00sub6]
 ParameterName=6th Mapped Object in TxPDO 1
@@ -1276,7 +1186,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A00sub7]
 ParameterName=7th Mapped Object in TxPDO 1
@@ -1285,7 +1194,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A00sub8]
 ParameterName=8th Mapped Object in TxPDO 1
@@ -1294,7 +1202,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 ;******************************************************************
 ;	Transmit PDO 2 mapping
@@ -1314,7 +1221,6 @@ HighLimit=8
 DefaultValue=2
 PDOMapping=0
 ObjFlags=0
-ParameterValue=1
 
 [1A01sub1]
 ParameterName=1st Mapped Object in TxPDO 2
@@ -1323,7 +1229,6 @@ AccessType=rw
 DefaultValue=0x60410010
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x606C0020
 
 [1A01sub2]
 ParameterName=2nd Mapped Object in TxPDO 2
@@ -1332,7 +1237,6 @@ AccessType=rw
 DefaultValue=0x60610008
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A01sub3]
 ParameterName=3rd Mapped Object in TxPDO 2
@@ -1341,7 +1245,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A01sub4]
 ParameterName=4th Mapped Object in TxPDO 2
@@ -1350,7 +1253,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A01sub5]
 ParameterName=5th Mapped Object in TxPDO 2
@@ -1359,7 +1261,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A01sub6]
 ParameterName=6th Mapped Object in TxPDO 2
@@ -1368,7 +1269,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A01sub7]
 ParameterName=7th Mapped Object in TxPDO 2
@@ -1377,7 +1277,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A01sub8]
 ParameterName=8th Mapped Object in TxPDO 2
@@ -1386,7 +1285,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 ;******************************************************************
 ;	Transmit PDO 3 mapping
@@ -1406,7 +1304,6 @@ HighLimit=8
 DefaultValue=2
 PDOMapping=0
 ObjFlags=0
-ParameterValue=2
 
 [1A02sub1]
 ParameterName=1st Mapped Object in TxPDO 3
@@ -1415,7 +1312,6 @@ AccessType=rw
 DefaultValue=0x60410010
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x60410010
 
 [1A02sub2]
 ParameterName=2nd Mapped Object in TxPDO 3
@@ -1424,7 +1320,6 @@ AccessType=rw
 DefaultValue=0x60640020
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x60640020
 
 [1A02sub3]
 ParameterName=3rd Mapped Object in TxPDO 3
@@ -1433,7 +1328,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A02sub4]
 ParameterName=4th Mapped Object in TxPDO 3
@@ -1442,7 +1336,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A02sub5]
 ParameterName=5th Mapped Object in TxPDO 3
@@ -1451,7 +1344,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A02sub6]
 ParameterName=6th Mapped Object in TxPDO 3
@@ -1460,7 +1352,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A02sub7]
 ParameterName=7th Mapped Object in TxPDO 3
@@ -1469,7 +1360,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A02sub8]
 ParameterName=8th Mapped Object in TxPDO 3
@@ -1478,7 +1368,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 ;******************************************************************
 ;	Transmit PDO 4 mapping
@@ -1498,7 +1387,6 @@ HighLimit=8
 DefaultValue=2
 PDOMapping=0
 ObjFlags=0
-ParameterValue=2
 
 [1A03sub1]
 ParameterName=1st Mapped Object in TxPDO 4
@@ -1507,7 +1395,6 @@ AccessType=rw
 DefaultValue=0x60410010
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x60410010
 
 [1A03sub2]
 ParameterName=2nd Mapped Object in TxPDO 4
@@ -1516,7 +1403,6 @@ AccessType=rw
 DefaultValue=0x606C0020
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x606C0020
 
 [1A03sub3]
 ParameterName=3rd Mapped Object in TxPDO 4
@@ -1525,7 +1411,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A03sub4]
 ParameterName=4th Mapped Object in TxPDO 4
@@ -1534,7 +1419,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A03sub5]
 ParameterName=5th Mapped Object in TxPDO 4
@@ -1543,7 +1427,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A03sub6]
 ParameterName=6th Mapped Object in TxPDO 4
@@ -1552,7 +1435,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A03sub7]
 ParameterName=7th Mapped Object in TxPDO 4
@@ -1561,7 +1443,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [1A03sub8]
 ParameterName=8th Mapped Object in TxPDO 4
@@ -1570,7 +1451,6 @@ AccessType=rw
 DefaultValue=0x00000000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 ;******************************************************************
 ;	Manufacturer Specific Objects
@@ -1583,7 +1463,6 @@ AccessType=rw
 DefaultValue=$NODEID+0x00
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x01
 
 [2001]
 ParameterName=CAN Bitrate
@@ -1594,7 +1473,6 @@ LowLimit=0
 HighLimit=6
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0003
 
 [2002]
 ParameterName=RS232 Baudrate
@@ -1605,7 +1483,6 @@ LowLimit=0
 HighLimit=5
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0003
 
 [2003]
 SubNumber=6
@@ -1626,7 +1503,6 @@ DataType=0x6
 AccessType=ro
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x2032
 
 [2003sub2]
 ParameterName=Hardware Version
@@ -1634,7 +1510,6 @@ DataType=0x6
 AccessType=ro
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x6211
 
 [2003sub3]
 ParameterName=Application Number
@@ -1642,7 +1517,6 @@ DataType=0x6
 AccessType=ro
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x0000
 
 [2003sub4]
 ParameterName=Application Version
@@ -1650,7 +1524,6 @@ DataType=0x6
 AccessType=ro
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x0000
 
 [2003sub5]
 ParameterName=Basesector Version
@@ -1658,7 +1531,6 @@ DataType=0x6
 AccessType=ro
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x0029
 
 [2004]
 ParameterName=Serial Number
@@ -1666,7 +1538,6 @@ DataType=0x1B
 AccessType=Const
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x0000602009007003
 
 [2005]
 ParameterName=RS232 Frame Timeout
@@ -1675,7 +1546,6 @@ AccessType=rw
 DefaultValue=500
 PDOMapping=0
 ObjFlags=0
-ParameterValue=500
 
 [2008]
 ParameterName=Miscellaneous Configuration
@@ -1684,7 +1554,6 @@ AccessType=rw
 DefaultValue=0x00
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0000
 
 [2009]
 ParameterName=Internal Dip Switch State
@@ -1713,7 +1582,6 @@ AccessType=rw
 DefaultValue=0x00
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [200Csub2]
 ParameterName=Custom persistent memory 2
@@ -1722,7 +1590,6 @@ AccessType=rw
 DefaultValue=0x00
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [200Csub3]
 ParameterName=Custom persistent memory 3
@@ -1731,7 +1598,6 @@ AccessType=rw
 DefaultValue=0x00
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [200Csub4]
 ParameterName=Custom persistent memory4
@@ -1740,7 +1606,6 @@ AccessType=rw
 DefaultValue=0x00
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00000000
 
 [2010]
 ParameterName=Internal DataRecorder Control
@@ -1755,7 +1620,6 @@ DataType=0x6
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0003
 
 [2012]
 ParameterName=Internal DataRecorder Sampling Period
@@ -1763,7 +1627,6 @@ DataType=0x6
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x000A
 
 [2013]
 ParameterName=Internal DataRecorder Number of Preceding Samples
@@ -1771,7 +1634,6 @@ DataType=0x6
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0000
 
 [2014]
 ParameterName=Internal DataRecorder Number of Sampling Variables
@@ -1779,7 +1641,6 @@ DataType=0x6
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0000
 
 [2015]
 SubNumber=5
@@ -1800,7 +1661,6 @@ DataType=0x6
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0000
 
 [2015sub2]
 ParameterName=Internal DataRecorder Index of Variable 2
@@ -1808,7 +1668,6 @@ DataType=0x6
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0000
 
 [2015sub3]
 ParameterName=Internal DataRecorder Index of Variable 3
@@ -1816,7 +1675,6 @@ DataType=0x6
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0000
 
 [2015sub4]
 ParameterName=Internal DataRecorder Index of Variable 4
@@ -1824,7 +1682,6 @@ DataType=0x6
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0000
 
 [2016]
 SubNumber=5
@@ -1845,7 +1702,6 @@ DataType=0x6
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0000
 
 [2016sub2]
 ParameterName=Internal DataRecorder SubIndex of Variable 2
@@ -1853,7 +1709,6 @@ DataType=0x6
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0000
 
 [2016sub3]
 ParameterName=Internal DataRecorder SubIndex of Variable 3
@@ -1861,7 +1716,6 @@ DataType=0x6
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0000
 
 [2016sub4]
 ParameterName=Internal DataRecorder SubIndex of Variable 4
@@ -1869,7 +1723,6 @@ DataType=0x6
 AccessType=rw
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x0000
 
 [2017]
 ParameterName=Internal DataRecorder Status
@@ -1976,7 +1829,7 @@ PDOMapping=0
 ObjFlags=3
 
 [2027]
-ParameterName=Current Actual Value Averaged
+ParameterName=Current Actual Value Averaged 
 DataType=0x3
 AccessType=ro
 PDOMapping=1
@@ -2004,14 +1857,14 @@ PDOMapping=0
 ObjFlags=3
 
 [202B]
-ParameterName=Internal Object Motor Phase Current U
+ParameterName=Internal Object Motor Phase Current U 
 DataType=0x3
 AccessType=ro
 PDOMapping=0
 ObjFlags=3
 
 [202C]
-ParameterName=Internal Object Motor Phase Current V
+ParameterName=Internal Object Motor Phase Current V 
 DataType=0x3
 AccessType=ro
 PDOMapping=0
@@ -2092,7 +1945,6 @@ AccessType=rw
 DefaultValue=15
 PDOMapping=0
 ObjFlags=0
-ParameterValue=15
 
 [2070sub2]
 ParameterName=Configuration of Digital Input2
@@ -2101,7 +1953,6 @@ AccessType=rw
 DefaultValue=14
 PDOMapping=0
 ObjFlags=0
-ParameterValue=14
 
 [2070sub3]
 ParameterName=Configuration of Digital Input3
@@ -2110,7 +1961,6 @@ AccessType=rw
 DefaultValue=13
 PDOMapping=0
 ObjFlags=0
-ParameterValue=13
 
 [2070sub4]
 ParameterName=Configuration of Digital Input4
@@ -2119,7 +1969,6 @@ AccessType=rw
 DefaultValue=2
 PDOMapping=0
 ObjFlags=0
-ParameterValue=2
 
 [2070sub5]
 ParameterName=Configuration of Digital Input5
@@ -2128,7 +1977,6 @@ AccessType=rw
 DefaultValue=1
 PDOMapping=0
 ObjFlags=0
-ParameterValue=1
 
 [2070sub6]
 ParameterName=Configuration of Digital Input6
@@ -2137,7 +1985,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [2071]
 SubNumber=5
@@ -2166,7 +2013,6 @@ AccessType=rw
 DefaultValue=0xE007
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0xE007
 
 [2071sub3]
 ParameterName=DigIn Functionalities Polarity
@@ -2175,7 +2021,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [2071sub4]
 ParameterName=DigIn Functionalities Execution Mask
@@ -2184,7 +2029,6 @@ AccessType=rw
 DefaultValue=8
 PDOMapping=0
 ObjFlags=0
-ParameterValue=8
 
 [2074]
 SubNumber=7
@@ -2213,7 +2057,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [2074sub3]
 ParameterName=Position Marker Mode
@@ -2222,7 +2065,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [2074sub4]
 ParameterName=Position Marker Counter
@@ -2272,7 +2114,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [2078sub3]
 ParameterName=DigOutput Polarity
@@ -2281,7 +2122,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [2079]
 SubNumber=5
@@ -2303,7 +2143,6 @@ AccessType=rw
 DefaultValue=15
 PDOMapping=0
 ObjFlags=0
-ParameterValue=15
 
 [2079sub2]
 ParameterName=Configuration of Digital Output2
@@ -2312,7 +2151,6 @@ AccessType=rw
 DefaultValue=14
 PDOMapping=0
 ObjFlags=0
-ParameterValue=14
 
 [2079sub3]
 ParameterName=Configuration of Digital Output3
@@ -2321,7 +2159,6 @@ AccessType=rw
 DefaultValue=13
 PDOMapping=0
 ObjFlags=0
-ParameterValue=13
 
 [2079sub4]
 ParameterName=Configuration of Digital Output4
@@ -2330,7 +2167,6 @@ AccessType=rw
 DefaultValue=12
 PDOMapping=0
 ObjFlags=0
-ParameterValue=12
 
 [207C]
 SubNumber=3
@@ -2366,7 +2202,6 @@ AccessType=rwr
 DefaultValue=500
 PDOMapping=1
 ObjFlags=0
-ParameterValue=500
 
 [2081]
 ParameterName=Home Position
@@ -2375,7 +2210,6 @@ AccessType=rwr
 DefaultValue=0
 PDOMapping=1
 ObjFlags=0
-ParameterValue=0
 
 [20F4]
 ParameterName=Following Error Actual Value
@@ -2406,7 +2240,6 @@ AccessType=rw
 DefaultValue=500
 PDOMapping=0
 ObjFlags=0
-ParameterValue=500
 
 [2210sub2]
 ParameterName=Position Sensor Type
@@ -2415,7 +2248,6 @@ AccessType=rw
 DefaultValue=1
 PDOMapping=0
 ObjFlags=0
-ParameterValue=1
 
 [2210sub3]
 ParameterName=Internal Absolute Position Offset
@@ -2424,7 +2256,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [2210sub4]
 ParameterName=Position Sensor Polarity
@@ -2433,7 +2264,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [2300]
 SubNumber=5
@@ -2462,7 +2292,6 @@ AccessType=rw
 DefaultValue=1
 PDOMapping=0
 ObjFlags=0
-ParameterValue=1
 
 [2300sub3]
 ParameterName=Digital Position Scaling Denominator
@@ -2471,7 +2300,6 @@ AccessType=rw
 DefaultValue=1
 PDOMapping=0
 ObjFlags=0
-ParameterValue=1
 
 [2300sub4]
 ParameterName=Digital Position Polarity
@@ -2480,7 +2308,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [2FFF]
 SubNumber=6
@@ -2551,7 +2378,6 @@ AccessType=rww
 DefaultValue=1
 PDOMapping=1
 ObjFlags=0
-ParameterValue=-3
 
 [6061]
 ParameterName=Modes of Operation Display
@@ -2581,7 +2407,6 @@ AccessType=rwr
 DefaultValue=2000
 PDOMapping=1
 ObjFlags=0
-ParameterValue=2000
 
 [6067]
 ParameterName=Position Window
@@ -2590,7 +2415,6 @@ AccessType=rw
 DefaultValue=4294967295
 PDOMapping=0
 ObjFlags=0
-ParameterValue=4294967295
 
 [6068]
 ParameterName=Position Window Time
@@ -2599,7 +2423,6 @@ AccessType=rw
 DefaultValue=0
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0
 
 [6069]
 ParameterName=Velocity Sensor Actual Value
@@ -2643,7 +2466,6 @@ AccessType=rwr
 DefaultValue=0
 PDOMapping=1
 ObjFlags=0
-ParameterValue=0
 
 [607D]
 SubNumber=3
@@ -2665,7 +2487,6 @@ AccessType=rw
 DefaultValue=-2147483648
 PDOMapping=0
 ObjFlags=0
-ParameterValue=-2147483648
 
 [607Dsub2]
 ParameterName=Max Position Limit
@@ -2674,7 +2495,6 @@ AccessType=rw
 DefaultValue=2147483647
 PDOMapping=0
 ObjFlags=0
-ParameterValue=2147483647
 
 [607F]
 ParameterName=Max Profile Velocity
@@ -2685,7 +2505,6 @@ LowLimit=0
 HighLimit=25000
 PDOMapping=0
 ObjFlags=0
-ParameterValue=9500
 
 [6081]
 ParameterName=Profile Velocity
@@ -2694,7 +2513,6 @@ AccessType=rwr
 DefaultValue=1000
 PDOMapping=1
 ObjFlags=0
-ParameterValue=1000
 
 [6083]
 ParameterName=Profile Acceleration
@@ -2703,7 +2521,6 @@ AccessType=rwr
 DefaultValue=10000
 PDOMapping=1
 ObjFlags=0
-ParameterValue=10000
 
 [6084]
 ParameterName=Profile Deceleration
@@ -2712,7 +2529,6 @@ AccessType=rwr
 DefaultValue=10000
 PDOMapping=1
 ObjFlags=0
-ParameterValue=10000
 
 [6085]
 ParameterName=QuickStop Deceleration
@@ -2721,7 +2537,6 @@ AccessType=rwr
 DefaultValue=10000
 PDOMapping=1
 ObjFlags=0
-ParameterValue=10000
 
 [6086]
 ParameterName=Motion ProfileType
@@ -2730,7 +2545,6 @@ AccessType=rwr
 DefaultValue=0
 PDOMapping=1
 ObjFlags=0
-ParameterValue=0
 
 [6089]
 ParameterName=Position Notation Index
@@ -2739,7 +2553,6 @@ AccessType=rw
 DefaultValue=0x00
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00
 
 [608A]
 ParameterName=Position Dimension Index
@@ -2748,7 +2561,6 @@ AccessType=rw
 DefaultValue=0xAC
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0xAC
 
 [608B]
 ParameterName=Velocity Notation Index
@@ -2757,7 +2569,6 @@ AccessType=rw
 DefaultValue=0x00
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00
 
 [608C]
 ParameterName=Velocity Dimension Index
@@ -2766,7 +2577,6 @@ AccessType=rw
 DefaultValue=0xA4
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0xA4
 
 [608D]
 ParameterName=Acceleration Notation Index
@@ -2775,7 +2585,6 @@ AccessType=rw
 DefaultValue=0x00
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0x00
 
 [608E]
 ParameterName=Acceleration Dimension Index
@@ -2784,7 +2593,6 @@ AccessType=rw
 DefaultValue=0xA4
 PDOMapping=0
 ObjFlags=0
-ParameterValue=0xA4
 
 [6098]
 ParameterName=Homing Method
@@ -2793,7 +2601,6 @@ AccessType=rwr
 DefaultValue=7
 PDOMapping=1
 ObjFlags=0
-ParameterValue=7
 
 [6099]
 SubNumber=3
@@ -2815,7 +2622,6 @@ AccessType=rwr
 DefaultValue=100
 PDOMapping=1
 ObjFlags=0
-ParameterValue=100
 
 [6099sub2]
 ParameterName=Speed for Zero Search
@@ -2824,7 +2630,6 @@ AccessType=rwr
 DefaultValue=10
 PDOMapping=1
 ObjFlags=0
-ParameterValue=10
 
 [609A]
 ParameterName=Homing Acceleration
@@ -2833,7 +2638,6 @@ AccessType=rwr
 DefaultValue=1000
 PDOMapping=1
 ObjFlags=0
-ParameterValue=1000
 
 [60F6]
 SubNumber=3
@@ -2855,7 +2659,6 @@ AccessType=rwr
 DefaultValue=800
 PDOMapping=1
 ObjFlags=0
-ParameterValue=1091
 
 [60F6sub2]
 ParameterName=Current Regulator I-Gain
@@ -2864,7 +2667,6 @@ AccessType=rwr
 DefaultValue=200
 PDOMapping=1
 ObjFlags=0
-ParameterValue=184
 
 [60F9]
 SubNumber=3
@@ -2886,7 +2688,6 @@ AccessType=rwr
 DefaultValue=1000
 PDOMapping=1
 ObjFlags=0
-ParameterValue=1000
 
 [60F9sub2]
 ParameterName=Speed Regulator I-Gain
@@ -2895,7 +2696,6 @@ AccessType=rwr
 DefaultValue=100
 PDOMapping=1
 ObjFlags=0
-ParameterValue=100
 
 [60FB]
 SubNumber=6
@@ -2917,7 +2717,6 @@ AccessType=rwr
 DefaultValue=150
 PDOMapping=1
 ObjFlags=0
-ParameterValue=150
 
 [60FBsub2]
 ParameterName=Position Regulator I-Gain
@@ -2926,7 +2725,6 @@ AccessType=rwr
 DefaultValue=10
 PDOMapping=1
 ObjFlags=0
-ParameterValue=10
 
 [60FBsub3]
 ParameterName=Position Regulator D-Gain
@@ -2935,7 +2733,6 @@ AccessType=rwr
 DefaultValue=200
 PDOMapping=1
 ObjFlags=0
-ParameterValue=200
 
 [60FBsub4]
 ParameterName=Velocity Feedforward Factor
@@ -2944,7 +2741,6 @@ AccessType=rwr
 DefaultValue=0
 PDOMapping=1
 ObjFlags=0
-ParameterValue=0
 
 [60FBsub5]
 ParameterName=Acceleration Feedforward Factor
@@ -2953,7 +2749,6 @@ AccessType=rwr
 DefaultValue=0
 PDOMapping=1
 ObjFlags=0
-ParameterValue=0
 
 [60FF]
 ParameterName=TargetVelocity
@@ -2969,7 +2764,6 @@ AccessType=rw
 DefaultValue=10
 PDOMapping=0
 ObjFlags=0
-ParameterValue=1
 
 [6410]
 SubNumber=6
@@ -2993,7 +2787,6 @@ HighLimit=5000
 DefaultValue=5000
 PDOMapping=1
 ObjFlags=0
-ParameterValue=5000
 
 [6410sub2]
 ParameterName=Output Current Limit
@@ -3004,7 +2797,6 @@ HighLimit=10000
 DefaultValue=10000
 PDOMapping=1
 ObjFlags=0
-ParameterValue=10000
 
 [6410sub3]
 ParameterName=PolePair Number
@@ -3013,7 +2805,6 @@ AccessType=rw
 DefaultValue=1
 PDOMapping=0
 ObjFlags=0
-ParameterValue=1
 
 [6410sub4]
 ParameterName=Maximal Speed in CurrentMode
@@ -3022,7 +2813,6 @@ AccessType=rwr
 DefaultValue=30000
 PDOMapping=1
 ObjFlags=0
-ParameterValue=30000
 
 [6410sub5]
 ParameterName=Thermal Time Constant Winding
@@ -3033,7 +2823,6 @@ AccessType=rw
 DefaultValue=40
 PDOMapping=0
 ObjFlags=0
-ParameterValue=717
 
 [6502]
 ParameterName=Supported Drive Modes
@@ -3041,5 +2830,4 @@ DataType=0x7
 AccessType=Const
 PDOMapping=0
 ObjFlags=1
-ParameterValue=0x003F0025
 
