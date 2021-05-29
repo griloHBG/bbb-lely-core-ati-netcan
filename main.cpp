@@ -52,10 +52,11 @@ typedef struct sockaddr_can SockAddrCan;
 typedef struct timeval TimeVal;
 
 
-constexpr int logSize = 250;
+constexpr int logSize = 3000;
 
 std::array<float, logSize> logPosition;
-std::array<float, logSize> logForceZ;
+std::array<float, logSize> logVelocity;
+std::array<float, logSize> logTauZ;
 std::array<float, logSize> logDt;
 int logCounter = 0;
 
@@ -589,7 +590,7 @@ void intHandler(int dummy) {
     keepRunning = 0;
 }
 
-float sharedFZ = 0;
+float sharedTZ = 0;
 
 std::atomic<bool> keepRunningAti{true};
 
@@ -741,10 +742,10 @@ void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRout
             ft = multiply(*matrix, sg);
     
             fzMtx->lock();
-            sharedFZ = ft[2];
+            sharedTZ = ft[5];
             fzMtx->unlock();
 
-            //std::cout << "fz: " << sharedFZ << "\n";
+            //std::cout << "fz: " << sharedTZ << "\n";
     
             //std::cout << "FT: ";
             //std::for_each(ft.begin(), ft.end(), [](const float& v) { std::cout << std::setw(10) << std::setprecision(3) << v; });
@@ -765,13 +766,16 @@ void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRout
 
 /*------- END ATI-NETCANOEM-SENSOR ------- */
 
-constexpr float referencePosition = -3.141596f/3.f;
-constexpr float gainP = 1000.f;
-constexpr float gainI = 0.f;
-constexpr float gainD = 100.f;
+constexpr float PI = 3.141596f;
 
-constexpr float gainKy = 20.f;
-constexpr float gainBy = 8.f;
+//constexpr float referencePosition = -PI/3.f;
+constexpr float referencePosition = 0;//+PI/6.f;
+constexpr float gainP = 10e10;
+constexpr float gainI = 0.f;
+constexpr float gainD = 5e9;
+
+constexpr float gainKy = 10;
+constexpr float gainBy = 2;
 
 PID pidController{gainP, gainI, gainD, referencePosition};
 InteractionController intCtrl{gainKy, gainBy};
@@ -1051,70 +1055,92 @@ private:
         //tpdo_mapped[0x60FF][0] = static_cast<int32_t>(velocity);
         
         //for profile position
-        //tpdo_mapped[0x607A][0] = static_cast<int32_t>((sharedFZ + 21)*10);
+        //tpdo_mapped[0x607A][0] = static_cast<int32_t>((sharedTZ + 21)*10);
         //tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x003F);
         //master.TpdoEvent(2);
     
         //for non-profile position
-        //std::cout << "sharedFZ transformed: " << (sharedFZ + 21.f)*10.f << std::endl;
-        //Wait(AsyncWrite<int32_t>(0x2062, 0, static_cast<int32_t>((sharedFZ + 21.f)*10.f)));
+        //std::cout << "sharedTZ transformed: " << (sharedTZ + 21.f)*10.f << std::endl;
+        //Wait(AsyncWrite<int32_t>(0x2062, 0, static_cast<int32_t>((sharedTZ + 21.f)*10.f)));
         
         //for velocity
-        //tpdo_mapped[0x60FF][0] = static_cast<int32_t>((sharedFZ + 21)*10*2);
+        //tpdo_mapped[0x60FF][0] = static_cast<int32_t>((sharedTZ + 21)*10*2);
         //tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x000F);
         //master.TpdoEvent(3);
     
         //for current position MOTORZAO
-        //std::cout << "sharedFZ transformed: " << static_cast<int16_t>(sharedFZ) << std::endl
+        //std::cout << "sharedTZ transformed: " << static_cast<int16_t>(sharedTZ) << std::endl
         //<< "actual position: " << static_cast<int32_t>(rpdo_mapped[0x6064][0]) << std::endl
         //<< "actual velocity: " << static_cast<int32_t>(rpdo_mapped[0x606C][0]) << std::endl
         //<< "actual current: " << static_cast<int16_t>(rpdo_mapped[0x6078][0]) << std::endl;
-        ////Wait(AsyncWrite<int32_t>(0x2030, 0, static_cast<int32_t>(sharedFZ + 21.f)));
-        //tpdo_mapped[0x2030][0] = static_cast<int16_t>(sharedFZ);
+        ////Wait(AsyncWrite<int32_t>(0x2030, 0, static_cast<int32_t>(sharedTZ + 21.f)));
+        //tpdo_mapped[0x2030][0] = static_cast<int16_t>(sharedTZ);
         //tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x0003);
         //master.TpdoEvent(1);
         
         currentTime_us = micros();
         dt_us = currentTime_us - lastTime_us;
+    
+        //std::cout << "qc: " << static_cast<int>(rpdo_mapped[0x6064][0]) << std::endl;
         
         //for PID controller
         // angular position in radians
-        currentPosition = (static_cast<int32_t>(rpdo_mapped[0x6064][0])*2.f*3.141596f/2000.f)/gear;
+        currentPosition = (static_cast<int32_t>(rpdo_mapped[0x6064][0])*2.f*PI/2000.f)/gear;
+    
+        //std::cout << "currentPosition: " << currentPosition*360/(2*PI) << std::endl;
         
         // angular velocity in rad/s
-        currentVelocity = (static_cast<int32_t>(rpdo_mapped[0x606C][0])*3.141596f/30.f)/gear;
+        currentVelocity = (static_cast<int32_t>(rpdo_mapped[0x606C][0])*PI/30.f)/gear;
+    
+        //std::cout << "currentVelocity: " << currentVelocity << std::endl;
         
         // torque in Newton*meter
         //currentTorque = ((static_cast<int16_t>(rpdo_mapped[0x6078][0])/1000.f)*motorzaoTorqueConstant/1000.f)*gear;
         
         //currentTorque from force-torque-sensor
-        currentTorque = (sharedFZ+21)*.1f;
+        currentTorque = sharedTZ-(-0.019669075714286);
+        
+        //std::cout << "currentTorque: " << currentTorque << std::endl;
         
         //currentTorque = intCtrl.getTorqueFromObserver(controlSignal, currentVelocity, dt_us/1000000.f);
         
         angularCorrection = intCtrl.getControlSignal(currentTorque, dt_us/1000000.f);
         
-        controlSignal = -pidController.getControlSignal(currentPosition - angularCorrection, currentVelocity, 0);
+//        std::cout << "angularCorrection: " << angularCorrection << std::endl;
+    
+//        pidController.referencePosition = currentPosition;
+//        pidController.referenceVelocity = currentVelocity;
+        
+        controlSignal = pidController.getControlSignal(currentPosition + angularCorrection, currentVelocity, 0)/38.5/1e6;
+
+//        std::cout   << "pos: "      << std::setprecision(5) << currentPosition
+//                    << "\t vel: "   << std::setprecision(5) << currentVelocity
+//                    << "\tctrl: "   << std::setprecision(5) << controlSignal
+//                    << std::endl;
+        
         
         if (std::fabs(controlSignal) > 5000) {
             //std::cout << "controlSignal is too large: " << controlSignal << ". limiting to 5000" << std::endl;
-            controlSignal = 4500 * ( (float{0} < controlSignal) - (controlSignal < float{0}) );
+            controlSignal = 5000 * ( (float{0} < controlSignal) - (controlSignal < float{0}) );
         }
         
+        //std::cout << "controlSignal: " << controlSignal << std::endl;
+    
         tpdo_mapped[0x2030][0] = static_cast<int16_t>(controlSignal);
         tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x0003);
     
     
         if (logCounter < logSize) {
             logPosition[logCounter] = currentPosition;
-            logForceZ[logCounter] = currentTorque;
+            logVelocity[logCounter] = currentVelocity;
+            logTauZ[logCounter] = currentTorque;
             logDt[logCounter] = dt_us/1000.f;
             logCounter++;
             //std::cout << logCounter << std::endl;
         }
         else
         {
-            //std::cout << logSize << " data points recorded!" << std::endl;
+            std::cout << logSize << " data points recorded!" << std::endl;
         }
         
         /*if(++printCounter % 10 == 0) {
@@ -1192,14 +1218,14 @@ private:
 class MyCoTask : public lely::ev::CoTask {
 public:
     
-    MyCoTask(int& forceZ, lely::canopen::AsyncMaster& master) :
-    lely::ev::CoTask(), forceZ(forceZ), master(master)
+    MyCoTask( MyDriver& epos) :
+    lely::ev::CoTask(), epos(epos)
     {}
     
     virtual void
     operator()() noexcept override
     {
-        co_reenter (*this) {
+        /*co_reenter (*this) {
             while(forceZ < 100) {
                 //master.TpdoWrite(1, 0x206B, 0, 20+forceZ);
                 //std::cout << forceZ++;
@@ -1207,15 +1233,84 @@ public:
                 forceZ++;
                 co_yield get_executor().post((ev_task&)(*this));
             }
+        }*/
+        co_reenter (*this) {
+           while(keepRunning){
+                f = epos.AsyncRead<int32_t>(0x2027, 0x00);
+                while(!f.is_ready()) {
+                    co_yield get_executor().post((ev_task&)(*this));
+                }
+                std::cout << "current AVG: " << f.get().value() << std::endl;
+            }
         }
     }
 
 private:
-    int& forceZ;
-    lely::canopen::AsyncMaster& master;
+    MyDriver& epos;
+    lely::canopen::SdoFuture<int32_t> f;
     
 };
+/*
+class GameConnection : public lely::ev::CoTask {
+public:
+    
+    GameConnection(lely::canopen::AsyncMaster& master) :
+            lely::ev::CoTask(), master(master)
+    {
+    
+        // Creating socket file descriptor
+        if ((sockUDPCommunication = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
+            perror("socket creation failed");
+            exit(EXIT_FAILURE);
+        }
+        int option = 1;
+    
+        setsockopt(sockUDPCommunication, SOL_SOCKET, (SO_REUSEADDR|SO_REUSEPORT), (char*)&option, sizeof(option));
+    
+        memset(&serverAddr, 0, sizeof(serverAddr));
+        memset(&clientAddr, 0, sizeof(clientAddr));
+    
+        // Filling server information
+        serverAddr.sin_family    = AF_INET; // IPv4
+        serverAddr.sin_addr.s_addr = INADDR_ANY;
+        serverAddr.sin_port = htons(8080);
+    
+        if ( bind(sockUDPCommunication, (const struct sockaddr *)&serverAddr,
+                  sizeof(serverAddr)) < 0 )
+        {
+            perror("bind failed");
+            exit(EXIT_FAILURE);
+        }
+    
+        int len, n;
+    
+        len = sizeof(clientAddr);  //len is value/resuslt
+    
+        bool ok = true;
+    }
+    
+    virtual void
+    operator()() noexcept override
+    {
+        co_reenter (*this) {
+                        while(forceZ < 100) {
+                            //master.TpdoWrite(1, 0x206B, 0, 20+forceZ);
+                            //std::cout << forceZ++;
+                            //master.
+                            forceZ++;
+                            co_yield get_executor().post((ev_task&)(*this));
+                        }
+                    }
+    }
 
+private:
+    lely::canopen::AsyncMaster& master;
+    int sockUDPCommunication;
+    char recvMessage[1024];
+    int maxBufferSize = 1024;
+    struct sockaddr_in serverAddr{}, clientAddr{};
+    
+};*/
 
 int
 main() {
@@ -1656,7 +1751,7 @@ main() {
 #endif //USE_FORCETORQUE_SENSOR
 /*--------------END ATI-NETCANOEM--------------*/
 
-    //MyCoTask myCoTask(fz, master);
+    //MyCoTask myCoTask{driver};
     //loop.get_executor().post(myCoTask);
     // Run the event loop until no tasks remain (or the I/O context is shut down).
     loop.run();
@@ -1683,11 +1778,13 @@ main() {
     logPositionForceZ.open("/home/debian/lely-bbb/qd" + std::to_string(referencePosition) + "_K" + std::to_string(gainKy) + "_B" + std::to_string(gainBy)+ ".csv");
     
     logPositionForceZ   << std::setw(20) << std::setprecision(5) << "q [rad]" << ","
+                        << std::setw(20) << std::setprecision(5) << "qvel [rad/s]" << ","
                         << std::setw(20) << std::setprecision(5) << "tau [Nm]" << ","
                         << std::setw(20) << std::setprecision(5) << "dt [ms]" << std::endl;
     for(int i = 0; i < logSize; ++i) {
         logPositionForceZ   << std::setw(20) << std::setprecision(5) << logPosition[i] << ","
-                            << std::setw(20) << std::setprecision(5) << logForceZ[i] << ","
+                            << std::setw(20) << std::setprecision(5) << logVelocity[i] << ","
+                            << std::setw(20) << std::setprecision(5) << logTauZ[i] << ","
                             << std::setw(20) << std::setprecision(5) << logDt[i] << std::endl;
     }
     
