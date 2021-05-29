@@ -57,6 +57,7 @@ constexpr int logSize = 3000;
 std::array<float, logSize> logPosition;
 std::array<float, logSize> logVelocity;
 std::array<float, logSize> logTauZ;
+std::array<float, logSize> logMotorCurrent;
 std::array<float, logSize> logDt;
 int logCounter = 0;
 
@@ -584,10 +585,10 @@ std::array<float, 6> multiply(const std::array<std::array<float, 6>, 6>& matrix,
     return ret;
 }
 
-int keepRunning = 1;
+int keepRunningGetCurrentAVG = 1;
 
 void intHandler(int dummy) {
-    keepRunning = 0;
+    keepRunningGetCurrentAVG = 0;
 }
 
 float sharedTZ = 0;
@@ -1117,8 +1118,10 @@ private:
 //                    << "\t vel: "   << std::setprecision(5) << currentVelocity
 //                    << "\tctrl: "   << std::setprecision(5) << controlSignal
 //                    << std::endl;
-        
-        
+    
+        currentCurrent = static_cast<int16_t>(rpdo_mapped[0x6078][0]);
+//        std::cout << "currentCurrent: " << currentCurrent << std::endl;
+
         if (std::fabs(controlSignal) > 5000) {
             //std::cout << "controlSignal is too large: " << controlSignal << ". limiting to 5000" << std::endl;
             controlSignal = 5000 * ( (float{0} < controlSignal) - (controlSignal < float{0}) );
@@ -1134,6 +1137,7 @@ private:
             logPosition[logCounter] = currentPosition;
             logVelocity[logCounter] = currentVelocity;
             logTauZ[logCounter] = currentTorque;
+            logMotorCurrent[logCounter] = currentCurrent;
             logDt[logCounter] = dt_us/1000.f;
             logCounter++;
             //std::cout << logCounter << std::endl;
@@ -1206,6 +1210,7 @@ private:
     float currentPosition;
     float currentVelocity;
     float currentTorque;
+    float currentCurrent;
     float motorzaoTorqueConstant = 38.5f;
     float gear = 3.5f;
     float controlSignal = 0;
@@ -1235,7 +1240,7 @@ public:
             }
         }*/
         co_reenter (*this) {
-           while(keepRunning){
+           while(keepRunningGetCurrentAVG){
                 f = epos.AsyncRead<int32_t>(0x2027, 0x00);
                 while(!f.is_ready()) {
                     co_yield get_executor().post((ev_task&)(*this));
@@ -1250,6 +1255,19 @@ private:
     lely::canopen::SdoFuture<int32_t> f;
     
 };
+
+void getCurrentAVG(MyDriver* epos) {
+    auto f = epos->AsyncRead<int32_t>(0x2027, 0x00);
+    while(keepRunningGetCurrentAVG){
+        
+        while(!f.is_ready()) {
+            std::this_thread::sleep_for(10ms);
+        }
+        std::cout << "current AVG: " << f.get().value() << std::endl;
+        f = epos->AsyncRead<int32_t>(0x2027, 0x00);
+    }
+}
+
 /*
 class GameConnection : public lely::ev::CoTask {
 public:
@@ -1363,7 +1381,7 @@ main() {
     // means every user-defined callback for a CANopen event will be posted as a
     // task on the event loop, instead of being invoked during the event
     // processing by the stack
-    canopen::AsyncMaster master(timer, chanCANopenMaster, "/home/debian/lely-bbb/master-dcf-motorzao-current-3000.dcf", "/home/debian/lely-bbb/master-dcf-motorzao-current-3000.bin", 2);
+    canopen::AsyncMaster master(timer, chanCANopenMaster, "/home/debian/lely-bbb/master-dcf-motorzao-current-5000.dcf", "/home/debian/lely-bbb/master-dcf-motorzao-current-5000.bin", 2);
     //canopen::AsyncMaster master(timer, chanCANopenMaster, "/home/debian/lely-bbb/master-motorzinho.dcf", "/home/debian/lely-bbb/master-motorzinho.bin", 2);
 /*    master.OnRpdo([&](int i, ::std::error_code ec, const void* numsei, ::std::size_t s){
         std::cout << i << "\t" << ec << "\t" << numsei << "\t" << s << "\n";
@@ -1747,6 +1765,8 @@ main() {
     std::mutex fzMtx;
     std::thread atiThread(updateForceTorqueSensor, &chanRouter, &canRouter, &fzMtx, &matrix);
     
+    //std::thread getCurrentAVGThread(getCurrentAVG, &driver);
+    
     //TODO create a bias?!
 #endif //USE_FORCETORQUE_SENSOR
 /*--------------END ATI-NETCANOEM--------------*/
@@ -1766,6 +1786,13 @@ main() {
         atiThread.join();
         std::cout << "atiThread deu join!\n";
     }
+    /*if(getCurrentAVGThread.joinable())
+    {
+        keepRunningGetCurrentAVG = false;
+        std::cout << "esperando getCurrentAVGThread dar join\n";
+        atiThread.join();
+        std::cout << "getCurrentAVGThread deu join!\n";
+    }*/
 #endif //USE_FORCETORQUE_SENSOR
     std::cout <<"\n\nACABOU!\n\n";
     
@@ -1780,11 +1807,13 @@ main() {
     logPositionForceZ   << std::setw(20) << std::setprecision(5) << "q [rad]" << ","
                         << std::setw(20) << std::setprecision(5) << "qvel [rad/s]" << ","
                         << std::setw(20) << std::setprecision(5) << "tau [Nm]" << ","
+                        << std::setw(20) << std::setprecision(5) << "i [mA]" << ","
                         << std::setw(20) << std::setprecision(5) << "dt [ms]" << std::endl;
     for(int i = 0; i < logSize; ++i) {
         logPositionForceZ   << std::setw(20) << std::setprecision(5) << logPosition[i] << ","
                             << std::setw(20) << std::setprecision(5) << logVelocity[i] << ","
                             << std::setw(20) << std::setprecision(5) << logTauZ[i] << ","
+                            << std::setw(20) << std::setprecision(5) << logMotorCurrent[i] << ","
                             << std::setw(20) << std::setprecision(5) << logDt[i] << std::endl;
     }
     
