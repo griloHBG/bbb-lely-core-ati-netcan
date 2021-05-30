@@ -1122,7 +1122,7 @@ private:
         
         //currentTorque from force-torque-sensor
 #ifdef USE_FORCETORQUE_SENSOR
-        currentTorque = sharedTZ;//-(-0.019669075714286);
+        currentTorque = sharedTZ-(-0.019669075714286);
 #else
         currentTorque = 0;
 #endif
@@ -1139,11 +1139,11 @@ private:
         
         controlSignal = pidController.getControlSignal(currentPosition + angularCorrection, currentVelocity, 0)/38.5/1e6;
 
-        std::cout   << std::setw(10) << "pos: "      << std::setw(10) << std::setprecision(5) << currentPosition
-                    << std::setw(10) << "vel: "      << std::setw(10) << std::setprecision(5) << currentVelocity
-                    << std::setw(10) << "ctrl: "     << std::setw(10) << std::setprecision(5) << controlSignal
-                    << std::setw(10) << "sensor: "   << std::setw(10) << std::setprecision(5) << currentTorque
-                    << std::endl;
+//        std::cout   << std::setw(10) << "pos: "      << std::setw(10) << std::setprecision(5) << currentPosition
+//                    << std::setw(10) << "vel: "      << std::setw(10) << std::setprecision(5) << currentVelocity
+//                    << std::setw(10) << "ctrl: "     << std::setw(10) << std::setprecision(5) << controlSignal
+//                    << std::setw(10) << "sensor: "   << std::setw(10) << std::setprecision(5) << currentTorque
+//                    << std::endl;
     
         currentCurrent = static_cast<int16_t>(rpdo_mapped[0x6078][0]);
 //        std::cout << "currentCurrent: " << currentCurrent << std::endl;
@@ -1158,7 +1158,7 @@ private:
         tpdo_mapped[0x2030][0] = static_cast<int16_t>(controlSignal);
         tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x0003);
     
-    
+        /*
         if (logCounter < logSize) {
             logPosition[logCounter] = currentPosition;
             logVelocity[logCounter] = currentVelocity;
@@ -1171,7 +1171,7 @@ private:
         else
         {
             std::cout << logSize << " data points recorded!" << std::endl;
-        }
+        }*/
         
         /*if(++printCounter % 10 == 0) {
             printCounter = 0;
@@ -1318,73 +1318,26 @@ void getCurrentAVG(MyDriver* epos) {
     }
 }
 
-
-class GameConnectionCoTask : public lely::ev::CoTask {
+class GameStuff {
 public:
     
-    GameConnectionCoTask(MyDriver& epos, int socketReadTimeout_s, int socketReadTimeout_us) :
-            lely::ev::CoTask(), epos(epos)
-    {
-    
-        // Creating socket file descriptor
-        if ((sockUDPCommunication = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
-            perror("socket creation failed");
-            exit(EXIT_FAILURE);
-        }
-        int option = 1;
-    
-        setsockopt(sockUDPCommunication, SOL_SOCKET, (SO_REUSEADDR|SO_REUSEPORT), (char*)&option, sizeof(option));
-    
-        memset(&serverAddr, 0, sizeof(serverAddr));
-        memset(&clientAddr, 0, sizeof(clientAddr));
-    
-        // Filling server information
-        serverAddr.sin_family    = AF_INET; // IPv4
-        serverAddr.sin_addr.s_addr = INADDR_ANY;
-        serverAddr.sin_port = htons(8080);
-    
-        if ( bind(sockUDPCommunication, (const struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0 )
-        {
-            perror("bind failed");
-            exit(EXIT_FAILURE);
-        }
-    
-        len = sizeof(clientAddr);  //len is value/result
-    
-        connectionHandShake = false;
-    
-        std::cout << "Server accepting " << inet_ntoa(serverAddr.sin_addr) << " at port " << htons(serverAddr.sin_port) << " waiting connection from client GUI interface." << std::endl << std::endl;
-        do
-        {
-            n = recvfrom(sockUDPCommunication, recvMessage, maxBufferSize,
-                         MSG_WAITALL, (struct sockaddr *) &clientAddr,
-                         reinterpret_cast<socklen_t *>(&len));
-        
-            recvMessage[n] = '\0';
-    
-            connectionHandShake = strcmp(recvMessage, "hello passivity-project-server") == 0;
-        
-            if(!connectionHandShake)
-            {
-                std::cout << "wrong hand-shake from client!" << std::endl;
-            }
-        }
-        while(!connectionHandShake);
-    
-        tv.tv_sec = socketReadTimeout_s;
-        tv.tv_usec = socketReadTimeout_us;
-    
-        keepRunningGameConnection = true;
-        
-        std::cout << "GAME CONNECTED!" << std::endl;
-    }
-    
-    virtual void
-    operator()() noexcept override
-    {
-        co_reenter (*this) {
-            while(keepRunningGameConnection) {
-    
+    int sockUDPCommunication;
+    char recvMessage[1024];
+    int maxBufferSize = 1024;
+    struct sockaddr_in serverAddr{}, clientAddr{};
+    bool connectionHandShake;
+    fd_set rfds;
+    struct timeval tv{};
+    int len, n;
+    bool keepRunningGameConnection;
+    int retval;
+    json msgJson;
+    char sendMessage[1024] = "";
+};
+
+void gameUpdate (GameStuff* gs, MyDriver* epos) {
+    while(gs->keepRunningGameConnection) {
+
 //                FD_ZERO(&rfds);
 //                FD_SET(sockUDPCommunication, &rfds);
 //
@@ -1406,59 +1359,22 @@ public:
 //                    keepRunningGameConnection = strcmp(recvMessage, "end UDP communication") != 0;
 //                    std::cout << "estou saindo!" << std::endl;
 //                }
-            
-                msgJson["Type"] = "epos_info";
-                msgJson["position"] = epos.currentPosition;
-                
-                strcpy(sendMessage, msgJson.dump().c_str());
-                
-                //get_executor().post(sendToUDPTask);
-                std::cout << "sending to game\n";
-                sendto(sockUDPCommunication, (const char *)sendMessage, strlen(sendMessage), MSG_CONFIRM, (const struct sockaddr *) &clientAddr, len);
-                std::cout << "sending to game\n";
-                std::cout << "resubmiting game cotask\n";
     
-                co_yield get_executor().post((ev_task&)(*this));
-            }
-        }
+        gs->msgJson["Type"] = "epos_info";
+        gs->msgJson["position"] = epos->currentPosition;
+        
+        strcpy(gs->sendMessage, gs->msgJson.dump().c_str());
+        
+        //get_executor().post(sendToUDPTask);
+//        std::cout << "sending to game\n";
+        sendto(gs->sockUDPCommunication, (const char *)gs->sendMessage, strlen(gs->sendMessage), MSG_CONFIRM, (const struct sockaddr *) &gs->clientAddr, gs->len);
+//        std::cout << "sending to game\n";
+        
+        std::this_thread::sleep_for(20ms);
     }
+}
 
-private:
-    MyDriver& epos;
-    int sockUDPCommunication;
-    char recvMessage[1024];
-    int maxBufferSize = 1024;
-    struct sockaddr_in serverAddr{}, clientAddr{};
-    bool connectionHandShake;
-    fd_set rfds;
-    struct timeval tv{};
-    int len, n;
-    bool keepRunningGameConnection;
-    int retval;
-    json msgJson;
-    char sendMessage[1024] = "";
-    
-    lely::ev::Task sendToUDPTask{[&](){sendto(sockUDPCommunication, (const char *)sendMessage, strlen(sendMessage), MSG_CONFIRM, (const struct sockaddr *) &clientAddr, len);}};
-};
-
-class GameStuff {
-public:
-    
-    int sockUDPCommunication;
-    char recvMessage[1024];
-    int maxBufferSize = 1024;
-    struct sockaddr_in serverAddr{}, clientAddr{};
-    bool connectionHandShake;
-    fd_set rfds;
-    struct timeval tv{};
-    int len, n;
-    bool keepRunningGameConnection;
-    int retval;
-    json msgJson;
-    char sendMessage[1024] = "";
-};
-
-void GameSetup(GameStuff& gs, int socketReadTimeout_s, int socketReadTimeout_us) {
+void gameSetup(GameStuff& gs, int socketReadTimeout_s, int socketReadTimeout_us) {
     {
         
         // Creating socket file descriptor
@@ -1505,7 +1421,14 @@ void GameSetup(GameStuff& gs, int socketReadTimeout_s, int socketReadTimeout_us)
             }
         }
         while(!gs.connectionHandShake);
+        
+        gs.msgJson["comment"] = "hi simple-slider-game";
     
+        strcpy(gs.sendMessage, gs.msgJson.dump().c_str());
+    
+        std::cout << "sending to game\n";
+        sendto(gs.sockUDPCommunication, (const char *)gs.sendMessage, strlen(gs.sendMessage), MSG_CONFIRM, (const struct sockaddr *) &gs.clientAddr, gs.len);
+        
         gs.tv.tv_sec = socketReadTimeout_s;
         gs.tv.tv_usec = socketReadTimeout_us;
     
@@ -1989,7 +1912,7 @@ main() {
                sensorReadResponseCounter++;
     
                if(sensorReadResponseCounter == 2) {
-    
+                   
                    ft = multiply(matrix, sg);
     
                    {
@@ -2051,6 +1974,11 @@ main() {
     
     loop.get_executor().post(a);
     
+    GameStuff gs{};
+    
+    gameSetup(gs, 0, 20000);
+    std::thread gameUpdateThread(gameUpdate, &gs, &driver);
+    
 #endif //USE_FORCETORQUE_SENSOR
     
     //MyCoTask myCoTask{driver};
@@ -2062,13 +1990,13 @@ main() {
     //std::this_thread::sleep_for(5000ms);
     
 #ifdef USE_FORCETORQUE_SENSOR
-    /*if(atiThread.joinable())
+    if(gameUpdateThread.joinable())
     {
-        keepRunningAti = false;
+        gs.keepRunningGameConnection = false;
         std::cout << "esperando atiThread dar join\n";
-        atiThread.join();
+        gameUpdateThread.join();
         std::cout << "atiThread deu join!\n";
-    }*/
+    }
     /*if(getCurrentAVGThread.joinable())
     {
         keepRunningGetCurrentAVG = false;
