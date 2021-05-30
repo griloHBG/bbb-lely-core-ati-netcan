@@ -35,6 +35,8 @@
 #include <fstream>
 #include <iomanip>
 
+#include <arpa/inet.h>
+
 #include <json.hpp>
 #include <thread>
 #include <atomic>
@@ -628,12 +630,12 @@ int forcesensorreceivecount = 0;
 #ifdef USE_FORCETORQUE_SENSOR
 
 void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRouter* canRouter, std::mutex* fzMtx, std::array<std::array<float, 6>, 6>* matrix) {
-    using namespace std::chrono_literals;
-    std::array<int16_t, 6> sg{};
-    std::array<float, 6> ft{}; // Fx, Fy, Fz, Tx, Ty, Tz
-    NetCANOEMCANMsg::Status sensorStatus;
-    can_frame canFrame;
-    canFrame.can_dlc = 8;
+    //using namespace std::chrono_literals;
+    //std::array<int16_t, 6> sg{};
+    //std::array<float, 6> ft{}; // Fx, Fy, Fz, Tx, Ty, Tz
+    //NetCANOEMCANMsg::Status sensorStatus;
+    //can_frame canFrame;
+    //canFrame.can_dlc = 8;
     
     can_msg canMsg;
     
@@ -641,11 +643,9 @@ void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRout
     //keepRunningAti = 0;
     
     const uint16_t sgData_id_ans1 = helper.getBaseID() | NetCANOEMCANMsg::OpCode::SGData_ans1;
-    bool sgData_ans1_arrived = false;
     const uint16_t sgData_id_ans2 = helper.getBaseID() | NetCANOEMCANMsg::OpCode::SGData_ans2;
-    bool sgData_ans2_arrived = false;
     
-    /*lely::io::CanRouterReadFrame canRouterReadFrame0x7FX_SG024(sgData_id_ans1, lely::io::CanFlag::NONE,
+    lely::io::CanRouterReadFrame canRouterReadFrame0x7FX_SG024(sgData_id_ans1, lely::io::CanFlag::NONE,
         [=,&canMsg, &canRouter, &canRouterReadFrame0x7FX_SG024] (const can_msg* msg, ::std::error_code ec) {
             if (!ec) {
                 assert(msg);
@@ -684,13 +684,32 @@ void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRout
            if (ec != std::errc::operation_canceled) canRouter->submit_read_frame(canRouterReadFrame0x7FX_SG135);
        }
     );
-    canRouter->submit_read_frame(canRouterReadFrame0x7FX_SG135);*/
+    canRouter->submit_read_frame(canRouterReadFrame0x7FX_SG135);
+
+#define DISABLE_MOST_OF_ATI_THREAD
+#ifndef DISABLE_MOST_OF_ATI_THREAD
+    
+    std::cout << "ati sensor sleeping for 3s" << std::endl;
+    std::this_thread::sleep_for(3s);
+    std::cout << "ati sensor woke up after 3s" << std::endl;
+    
+    lely::ev::Future<void, int> write_future;
+
     
     while(keepRunningAti){
         
         canFrame = helper.getCANFrameRequest(NetCANOEMCANMsg::OpCode::SGData_req);
-        
-        chanRouter->write(linuxCanFrame2lelyCanFrame(canFrame));
+        std::error_code e;
+        chanRouter->write(linuxCanFrame2lelyCanFrame(canFrame), 0, e);
+    
+        /*try {
+            chanRouter->write(linuxCanFrame2lelyCanFrame(canFrame), 0);
+        }
+        catch (const std::system_error& e) {
+            std::cout << "Caught system_error with code " << e.code()
+                      << " meaning " << e.what() << '\n';
+        }*/
+        write_future = chanRouter->async_write(linuxCanFrame2lelyCanFrame(canFrame));
         
         bool tryAgain = false;
 
@@ -701,10 +720,12 @@ void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRout
         
         lely::ev::Future<const can_msg *, int> f1;
         lely::ev::Future<const can_msg *, int> f2;
-    
-        canFrame = helper.getCANFrameRequest(NetCANOEMCANMsg::OpCode::SGData_req);
         
-        PID pid{10, 1, 1};
+        while(!write_future.is_ready()) {
+            std::cout << "preso no futuro" << std::endl;
+            std::this_thread::yield();
+        }
+        std::cout << "LIBERADO!" << std::endl;
         
         do {
             bool sgData_ans1_arrived = false;
@@ -724,8 +745,8 @@ void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRout
             while (!f2.is_ready()) {
                 std::this_thread::yield();
             }
-    
-            forcesensorreceivecount++;
+        
+            std::cout << "forcesensorreceivecount: " << forcesensorreceivecount++ << std::endl;
             
             //std::cout << "f1\t" << f1.get().value()->id << "\t" << std::uppercase << std::hex << (uint8_t)f1.get().value()->data[0] << std::resetiosflags;
             //std::cout << std::endl;
@@ -761,6 +782,7 @@ void updateForceTorqueSensor(lely::io::CanChannel* chanRouter, lely::io::CanRout
             
         }while(keepRunningAti);
     }
+#endif //#ifdef DISABLE_MOST_OF_ATI_THREAD
 }
 
 #endif // USE_FORCETORQUE_SENSOR
@@ -1078,7 +1100,7 @@ private:
         //tpdo_mapped[0x2030][0] = static_cast<int16_t>(sharedTZ);
         //tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x0003);
         //master.TpdoEvent(1);
-        
+//        std::cout << "on sync counter: " << onSyncCounter++ << std::endl;
         currentTime_us = micros();
         dt_us = currentTime_us - lastTime_us;
     
@@ -1099,8 +1121,11 @@ private:
         //currentTorque = ((static_cast<int16_t>(rpdo_mapped[0x6078][0])/1000.f)*motorzaoTorqueConstant/1000.f)*gear;
         
         //currentTorque from force-torque-sensor
-        currentTorque = sharedTZ-(-0.019669075714286);
-        
+#ifdef USE_FORCETORQUE_SENSOR
+        currentTorque = sharedTZ;//-(-0.019669075714286);
+#else
+        currentTorque = 0;
+#endif
         //std::cout << "currentTorque: " << currentTorque << std::endl;
         
         //currentTorque = intCtrl.getTorqueFromObserver(controlSignal, currentVelocity, dt_us/1000000.f);
@@ -1114,10 +1139,11 @@ private:
         
         controlSignal = pidController.getControlSignal(currentPosition + angularCorrection, currentVelocity, 0)/38.5/1e6;
 
-//        std::cout   << "pos: "      << std::setprecision(5) << currentPosition
-//                    << "\t vel: "   << std::setprecision(5) << currentVelocity
-//                    << "\tctrl: "   << std::setprecision(5) << controlSignal
-//                    << std::endl;
+        std::cout   << std::setw(10) << "pos: "      << std::setw(10) << std::setprecision(5) << currentPosition
+                    << std::setw(10) << "vel: "      << std::setw(10) << std::setprecision(5) << currentVelocity
+                    << std::setw(10) << "ctrl: "     << std::setw(10) << std::setprecision(5) << controlSignal
+                    << std::setw(10) << "sensor: "   << std::setw(10) << std::setprecision(5) << currentTorque
+                    << std::endl;
     
         currentCurrent = static_cast<int16_t>(rpdo_mapped[0x6078][0]);
 //        std::cout << "currentCurrent: " << currentCurrent << std::endl;
@@ -1204,6 +1230,7 @@ private:
         }
     }
     
+public:
     float velocity = maxVel;
     float flag = 0;
     float direction = 3;
@@ -1218,6 +1245,7 @@ private:
     float angularCorrection = 0;
     
     int printCounter = 0;
+    int onSyncCounter = 0;
 };
 
 class MyCoTask : public lely::ev::CoTask {
@@ -1255,6 +1283,28 @@ private:
     lely::canopen::SdoFuture<int32_t> f;
     
 };
+/*
+class SensorTriggerCoTask : public lely::ev::CoTask {
+public:
+    
+    SensorTriggerCoTask( lely::io::CanChannel& chanRouter, NetCANOEMCANMsg& helper) :
+            lely::ev::CoTask(), chanRouter(chanRouter), helper(helper)
+    {}
+    
+    virtual void
+    operator()() noexcept override
+    {
+        co_reenter(*this) {
+                        co_yield chanRouter.write(linuxCanFrame2lelyCanFrame(
+                                helper.getCANFrameRequest(NetCANOEMCANMsg::OpCode::SGData_req)), 5);
+                    }
+    }
+
+private:
+    lely::io::CanChannel& chanRouter;
+    NetCANOEMCANMsg& helper
+    
+};*/
 
 void getCurrentAVG(MyDriver* epos) {
     auto f = epos->AsyncRead<int32_t>(0x2027, 0x00);
@@ -1268,12 +1318,12 @@ void getCurrentAVG(MyDriver* epos) {
     }
 }
 
-/*
-class GameConnection : public lely::ev::CoTask {
+
+class GameConnectionCoTask : public lely::ev::CoTask {
 public:
     
-    GameConnection(lely::canopen::AsyncMaster& master) :
-            lely::ev::CoTask(), master(master)
+    GameConnectionCoTask(MyDriver& epos, int socketReadTimeout_s, int socketReadTimeout_us) :
+            lely::ev::CoTask(), epos(epos)
     {
     
         // Creating socket file descriptor
@@ -1293,42 +1343,177 @@ public:
         serverAddr.sin_addr.s_addr = INADDR_ANY;
         serverAddr.sin_port = htons(8080);
     
-        if ( bind(sockUDPCommunication, (const struct sockaddr *)&serverAddr,
-                  sizeof(serverAddr)) < 0 )
+        if ( bind(sockUDPCommunication, (const struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0 )
         {
             perror("bind failed");
             exit(EXIT_FAILURE);
         }
     
-        int len, n;
+        len = sizeof(clientAddr);  //len is value/result
     
-        len = sizeof(clientAddr);  //len is value/resuslt
+        connectionHandShake = false;
     
-        bool ok = true;
+        std::cout << "Server accepting " << inet_ntoa(serverAddr.sin_addr) << " at port " << htons(serverAddr.sin_port) << " waiting connection from client GUI interface." << std::endl << std::endl;
+        do
+        {
+            n = recvfrom(sockUDPCommunication, recvMessage, maxBufferSize,
+                         MSG_WAITALL, (struct sockaddr *) &clientAddr,
+                         reinterpret_cast<socklen_t *>(&len));
+        
+            recvMessage[n] = '\0';
+    
+            connectionHandShake = strcmp(recvMessage, "hello passivity-project-server") == 0;
+        
+            if(!connectionHandShake)
+            {
+                std::cout << "wrong hand-shake from client!" << std::endl;
+            }
+        }
+        while(!connectionHandShake);
+    
+        tv.tv_sec = socketReadTimeout_s;
+        tv.tv_usec = socketReadTimeout_us;
+    
+        keepRunningGameConnection = true;
+        
+        std::cout << "GAME CONNECTED!" << std::endl;
     }
     
     virtual void
     operator()() noexcept override
     {
         co_reenter (*this) {
-                        while(forceZ < 100) {
-                            //master.TpdoWrite(1, 0x206B, 0, 20+forceZ);
-                            //std::cout << forceZ++;
-                            //master.
-                            forceZ++;
-                            co_yield get_executor().post((ev_task&)(*this));
-                        }
-                    }
+            while(keepRunningGameConnection) {
+    
+//                FD_ZERO(&rfds);
+//                FD_SET(sockUDPCommunication, &rfds);
+//
+//                retval = select(sockUDPCommunication+1, &rfds, NULL, NULL, &tv);
+//                // Don't rely on the value of tv now!
+//
+//                if (retval == -1)
+//                {
+//                    perror("select()");
+//                }
+//                else if (retval)
+//                {
+//                    n = recvfrom(sockUDPCommunication, recvMessage, maxBufferSize,
+//                                 MSG_WAITALL, (struct sockaddr *) &clientAddr,
+//                                 reinterpret_cast<socklen_t *>(&len));
+//
+//                    recvMessage[n] = '\0';
+//
+//                    keepRunningGameConnection = strcmp(recvMessage, "end UDP communication") != 0;
+//                    std::cout << "estou saindo!" << std::endl;
+//                }
+            
+                msgJson["Type"] = "epos_info";
+                msgJson["position"] = epos.currentPosition;
+                
+                strcpy(sendMessage, msgJson.dump().c_str());
+                
+                //get_executor().post(sendToUDPTask);
+                std::cout << "sending to game\n";
+                sendto(sockUDPCommunication, (const char *)sendMessage, strlen(sendMessage), MSG_CONFIRM, (const struct sockaddr *) &clientAddr, len);
+                std::cout << "sending to game\n";
+                std::cout << "resubmiting game cotask\n";
+    
+                co_yield get_executor().post((ev_task&)(*this));
+            }
+        }
     }
 
 private:
-    lely::canopen::AsyncMaster& master;
+    MyDriver& epos;
     int sockUDPCommunication;
     char recvMessage[1024];
     int maxBufferSize = 1024;
     struct sockaddr_in serverAddr{}, clientAddr{};
+    bool connectionHandShake;
+    fd_set rfds;
+    struct timeval tv{};
+    int len, n;
+    bool keepRunningGameConnection;
+    int retval;
+    json msgJson;
+    char sendMessage[1024] = "";
     
-};*/
+    lely::ev::Task sendToUDPTask{[&](){sendto(sockUDPCommunication, (const char *)sendMessage, strlen(sendMessage), MSG_CONFIRM, (const struct sockaddr *) &clientAddr, len);}};
+};
+
+class GameStuff {
+public:
+    
+    int sockUDPCommunication;
+    char recvMessage[1024];
+    int maxBufferSize = 1024;
+    struct sockaddr_in serverAddr{}, clientAddr{};
+    bool connectionHandShake;
+    fd_set rfds;
+    struct timeval tv{};
+    int len, n;
+    bool keepRunningGameConnection;
+    int retval;
+    json msgJson;
+    char sendMessage[1024] = "";
+};
+
+void GameSetup(GameStuff& gs, int socketReadTimeout_s, int socketReadTimeout_us) {
+    {
+        
+        // Creating socket file descriptor
+        if ((gs.sockUDPCommunication = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
+            perror("socket creation failed");
+            exit(EXIT_FAILURE);
+        }
+        int option = 1;
+        
+        setsockopt(gs.sockUDPCommunication, SOL_SOCKET, (SO_REUSEADDR|SO_REUSEPORT), (char*)&option, sizeof(option));
+        
+        memset(&gs.serverAddr, 0, sizeof(gs.serverAddr));
+        memset(&gs.clientAddr, 0, sizeof(gs.clientAddr));
+        
+        // Filling server information
+        gs.serverAddr.sin_family    = AF_INET; // IPv4
+        gs.serverAddr.sin_addr.s_addr = INADDR_ANY;
+        gs.serverAddr.sin_port = htons(8080);
+        
+        if ( bind(gs.sockUDPCommunication, (const struct sockaddr *)&gs.serverAddr, sizeof(gs.serverAddr)) < 0 )
+        {
+            perror("bind failed");
+            exit(EXIT_FAILURE);
+        }
+    
+        gs.len = sizeof(gs.clientAddr);  //len is value/result
+    
+        gs.connectionHandShake = false;
+        
+        std::cout << "Server accepting " << inet_ntoa(gs.serverAddr.sin_addr) << " at port " << htons(gs.serverAddr.sin_port) << " waiting connection from client GUI interface." << std::endl << std::endl;
+        do
+        {
+            gs.n = recvfrom(gs.sockUDPCommunication, gs.recvMessage, gs.maxBufferSize,
+                         MSG_WAITALL, (struct sockaddr *) &gs.clientAddr,
+                         reinterpret_cast<socklen_t *>(&gs.len));
+    
+            gs.recvMessage[gs.n] = '\0';
+    
+            gs.connectionHandShake = strcmp(gs.recvMessage, "hello passivity-project-server") == 0;
+            
+            if(!gs.connectionHandShake)
+            {
+                std::cout << "wrong hand-shake from client!" << std::endl;
+            }
+        }
+        while(!gs.connectionHandShake);
+    
+        gs.tv.tv_sec = socketReadTimeout_s;
+        gs.tv.tv_usec = socketReadTimeout_us;
+    
+        gs.keepRunningGameConnection = true;
+        
+        std::cout << "GAME CONNECTED!" << std::endl;
+    }
+}
 
 int
 main() {
@@ -1456,6 +1641,7 @@ main() {
 
 #ifdef USE_FORCETORQUE_SENSOR
 /*--------------INIT ATI-NETCANOEM--------------*/
+    //<editor-fold desc="ATI-NETCANOEM">
     int socketCan;
     
     if ((socketCan = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
@@ -1763,29 +1949,126 @@ main() {
     lely::io::CanRouter canRouter(chanRouter, exec);
     
     std::mutex fzMtx;
-    std::thread atiThread(updateForceTorqueSensor, &chanRouter, &canRouter, &fzMtx, &matrix);
+    
+    //std::thread atiThread(updateForceTorqueSensor, &chanRouter, &canRouter, &fzMtx, &matrix);
+    
     
     //std::thread getCurrentAVGThread(getCurrentAVG, &driver);
     
     //TODO create a bias?!
-#endif //USE_FORCETORQUE_SENSOR
+    //</editor-fold>
 /*--------------END ATI-NETCANOEM--------------*/
+#endif //USE_FORCETORQUE_SENSOR
 
+#ifdef USE_FORCETORQUE_SENSOR
+    
+    const uint16_t sgData_id_ans1 = helper.getBaseID() | NetCANOEMCANMsg::OpCode::SGData_ans1;
+    const uint16_t sgData_id_ans2 = helper.getBaseID() | NetCANOEMCANMsg::OpCode::SGData_ans2;
+    
+    auto const msgDataRequestToATISensor = linuxCanFrame2lelyCanFrame(helper.getCANFrameRequest(NetCANOEMCANMsg::OpCode::SGData_req));
+    
+    std::array<int16_t, 6> sg{};
+    int sensorReadResponseCounter = 0;
+    std::array<float, 6> ft;
+    
+    lely::io::CanRouterReadFrame canRouterReadFrame0x7FX_SG024(sgData_id_ans1, lely::io::CanFlag::NONE,
+        [&] (const can_msg* msg, ::std::error_code ec) {
+           if (!ec) {
+               assert(msg);
+               assert(msg->id == sgData_id_ans1);
+        
+               /*std::cout << "sg0 sg2 sg4 received\t";
+               std::cout << std::uppercase << std::hex << msg->id << " # ";
+               for (int i = 0; i < msg->len; i++)
+               {
+                   std::cout << std::uppercase << std::hex << (int)msg->data[i] << "  ";
+               }
+               std::cout << std::endl << std::resetiosflags;*/
+    
+               std::tie(sg[0], sg[2], sg[4]) = helper.toSGData<int16_t>(lelyCanFrame2linuxCanFrame(*msg));
+               sensorReadResponseCounter++;
+    
+               if(sensorReadResponseCounter == 2) {
+    
+                   ft = multiply(matrix, sg);
+    
+                   {
+                       std::lock_guard<std::mutex> l{fzMtx};
+                       sharedTZ = ft[5];
+                   }
+    
+                   sensorReadResponseCounter = 0;
+    
+                   chanRouter.write(msgDataRequestToATISensor, 0);
+               }
+           }
+        
+           if (ec != std::errc::operation_canceled) canRouter.submit_read_frame(canRouterReadFrame0x7FX_SG024);
+        }
+    );
+    
+    canRouter.submit_read_frame(canRouterReadFrame0x7FX_SG024);
+    
+    lely::io::CanRouterReadFrame canRouterReadFrame0x7FX_SG135(sgData_id_ans2, lely::io::CanFlag::NONE,
+           [&] (const can_msg* msg, ::std::error_code ec) {
+               if (!ec) {
+                assert(msg);
+                assert(msg->id == sgData_id_ans2);
+                
+                /*std::cout << "sg1 sg3 sg5 received\t";
+                std::cout << std::uppercase << std::hex << msg->id << " # ";
+                for (int i = 0; i < msg->len; i++)
+                {
+                    std::cout << std::uppercase << std::hex << (int)msg->data[i] << "  ";
+                }
+                std::cout << std::endl << std::resetiosflags;*/
+    
+               std::tie(sg[1], sg[3], sg[5]) = helper.toSGData<int16_t>(lelyCanFrame2linuxCanFrame(*msg));
+               sensorReadResponseCounter++;
+               
+               if(sensorReadResponseCounter == 2) {
+    
+                   ft = multiply(matrix, sg);
+    
+                   {
+                       std::lock_guard<std::mutex> l{fzMtx};
+                       sharedTZ = ft[5];
+                   }
+    
+                   sensorReadResponseCounter = 0;
+                   
+                   chanRouter.write(msgDataRequestToATISensor, 0);
+               }
+            }
+        
+           if (ec != std::errc::operation_canceled) canRouter.submit_read_frame(canRouterReadFrame0x7FX_SG135);
+        }
+    );
+    
+    canRouter.submit_read_frame(canRouterReadFrame0x7FX_SG135);
+    
+    lely::ev::Task a{[&](){chanRouter.write(msgDataRequestToATISensor, 0);}};
+    
+    loop.get_executor().post(a);
+    
+#endif //USE_FORCETORQUE_SENSOR
+    
     //MyCoTask myCoTask{driver};
-    //loop.get_executor().post(myCoTask);
+    //GameConnectionCoTask gameConnectionCoTask{driver, 0, 20000};
+    //loop.get_executor().post(gameConnectionCoTask);
     // Run the event loop until no tasks remain (or the I/O context is shut down).
     loop.run();
     
     //std::this_thread::sleep_for(5000ms);
     
 #ifdef USE_FORCETORQUE_SENSOR
-    if(atiThread.joinable())
+    /*if(atiThread.joinable())
     {
         keepRunningAti = false;
         std::cout << "esperando atiThread dar join\n";
         atiThread.join();
         std::cout << "atiThread deu join!\n";
-    }
+    }*/
     /*if(getCurrentAVGThread.joinable())
     {
         keepRunningGetCurrentAVG = false;

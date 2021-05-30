@@ -66,7 +66,7 @@ Baudrate=38400
 NetNumber=0
 NetworkName=Network 0
 CANopenManager=0
-LSS_SerialNumber=0
+LSS_SerialNumber=0x09007003
 
 [DummyUsage]
 Dummy0001=0

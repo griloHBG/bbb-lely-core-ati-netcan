@@ -26,7 +26,7 @@ master:
   # boot_time: 0 # ms
 
 slave_1:
-  dcf: "epos_com_motorzao_limitado_5000.dcf"
+  dcf: "./from_epos_studio/epos_com_motorzao_limitado_5000.dcf"
   # dcf_path: ""
   node_id: 1
   # revision_number: 0x12345678
