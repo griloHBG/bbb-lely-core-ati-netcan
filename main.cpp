@@ -631,8 +631,8 @@ constexpr float gainP = 10e10;
 constexpr float gainI = 0.f;
 constexpr float gainD = 5e9;
 
-constexpr float gainKy = 10;
-constexpr float gainBy = 2;
+float gainKy = 10;
+float gainBy = 2;
 
 PID pidController{gainP, gainI, gainD, referencePosition};
 InteractionController intCtrl{gainKy, gainBy};
@@ -1149,7 +1149,7 @@ void gameSendDataSetupConnection(GameStuff* gs) {
 
 std::ofstream playerData;
 
-std::string generationIndividual;
+std::string generationIndividual = "DISCARD";
 
 int fileSentCounter = 0;
 
@@ -1158,9 +1158,11 @@ void gameSendData (GameStuff* gs) {
     char buffer[1024];
     
     while(gs->keepRunningGameSendData) {
+    
+        memset(buffer, 0, sizeof(buffer));
+    
         std::cout << "waiting for data request" << std::endl;
         read(gs->sockTCPClient, buffer, sizeof(buffer));
-    
         if (strcmp(buffer, "requesting data from player") == 0) {
     
             std::cout << "request received" << std::endl;
@@ -1170,17 +1172,17 @@ void gameSendData (GameStuff* gs) {
                 std::lock_guard<std::mutex> lk(sendingPlayerDataMTX);
                 sendingPlayerDataATM = true;
         
-                playerDataStringStream << std::setw(20) << std::setprecision(5) << "q [rad]" << ","
-                                       << std::setw(20) << std::setprecision(5) << "qvel [rad/s]" << ","
-                                       << std::setw(20) << std::setprecision(5) << "tau [Nm]" << ","
-                                       << std::setw(20) << std::setprecision(5) << "i [mA]" << ","
-                                       << std::setw(20) << std::setprecision(5) << "dt [ms]" << std::endl;
+                playerDataStringStream <<"q [rad]" << ","
+                                       <<"qvel [rad/s]" << ","
+                                       <<"tau [Nm]" << ","
+                                       <<"i [mA]" << ","
+                                       <<"dt [ms]" << std::endl;
                 for (int i = 0; i < logCounter; ++i) {
-                    playerDataStringStream << std::setw(20) << std::setprecision(5) << logPosition[i] << ","
-                                           << std::setw(20) << std::setprecision(5) << logVelocity[i] << ","
-                                           << std::setw(20) << std::setprecision(5) << logTauZ[i] << ","
-                                           << std::setw(20) << std::setprecision(5) << logMotorCurrent[i] << ","
-                                           << std::setw(20) << std::setprecision(5) << logDt[i] << std::endl;
+                    playerDataStringStream << logPosition[i] << ","
+                                           << logVelocity[i] << ","
+                                           << logTauZ[i] << ","
+                                           << logMotorCurrent[i] << ","
+                                           << logDt[i] << std::endl;
                 }
                 sendingPlayerDataATM = false;
             }
@@ -1190,7 +1192,7 @@ void gameSendData (GameStuff* gs) {
     
             std::cout << "creating file name" << std::endl;
             std::string fileName =
-                    "/home/debian/lely-bbb/playerData/" + std::to_string(fileSentCounter++) + "_K" + std::to_string(gainKy) + "_B" +
+                    "/home/debian/lely-bbb/playerData/" + generationIndividual + "_K" + std::to_string(gainKy) + "_B" +
                     std::to_string(gainBy) + ".csv";
             std::cout << "writing file" << std::endl;
             playerData.open(fileName);
@@ -1222,7 +1224,21 @@ void gameSendData (GameStuff* gs) {
             
             } while (bytes_to_send > 0);
             std::cout << "log sent" << std::endl;
+    
+            read(gs->sockTCPClient, buffer, sizeof(buffer));
+    
+            json controllerInfo = json::parse(buffer);
+            
+            std::cout << "controllerInfo from game:" << controllerInfo << std::endl;
+    
+            generationIndividual = "g" + std::to_string((int)controllerInfo["gen_idx"]) + "_i" + std::to_string((int)controllerInfo["ind_idx"]);
+    
+            gainBy = controllerInfo["b"];
+            gainKy = controllerInfo["k"];
         
+        }
+        else {
+            std::cout << "wrong msg: " << buffer << std::endl;
         }
     }
 }

@@ -8,8 +8,9 @@
 
 class InteractionController {
 public:
-    InteractionController(float Ky, float By, float referenceTorque = 0) : Ky(Ky), By(By), referenceTorque(referenceTorque)
-    {}
+    InteractionController(float& Ky, float& By, float referenceTorque = 0) : Ky(Ky), By(By), referenceTorque(referenceTorque)
+    {
+    }
     
     float getControlSignal(float currentTorque, float dt) {
         float controlSignal;
@@ -22,8 +23,8 @@ public:
     }
     
 public:
-    float Ky = 0;
-    float By = 0;
+    const float& Ky;
+    const float& By;
     float lastActionSignal = 0; // qa
     float referenceTorque = 0;
     float lastVelocity = 0;
