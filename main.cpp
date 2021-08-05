@@ -627,18 +627,18 @@ constexpr float PI = 3.141596f;
 
 //constexpr float referencePosition = -PI/3.f;
 constexpr float referencePosition = 0;//+PI/6.f;
-constexpr float gainP = 10e10;
+constexpr float gainP = 400;
 constexpr float gainI = 0.f;
-constexpr float gainD = 5e9;
+constexpr float gainD = 5/2;
 
-float gainKy = 10;
-float gainBy = 2;
+float gainKy = 50;
+float gainBy = 50;
 
 PID pidController{gainP, gainI, gainD, referencePosition};
 InteractionController intCtrl{gainKy, gainBy};
 
 
-// Get time stamp in microseconds. From here: https://stackoverflow.com/a/49066369/6609908
+    // Get time stamp in microseconds. From here: https://stackoverflow.com/a/49066369/6609908
 uint64_t micros()
 {
     uint64_t us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::
@@ -893,6 +893,9 @@ private:
     int maxVel = 2000;
     int minVel = -2000;
     
+    int counter = 0;
+    int maxCounter = 50;
+    
     void OnSync(uint8_t cnt, const time_point& t) noexcept override {
         currentTime_us = micros();
         dt_us = currentTime_us - lastTime_us;
@@ -900,6 +903,8 @@ private:
         //for PID controller
         // angular position in radians
         currentPosition = (static_cast<int32_t>(rpdo_mapped[0x6064][0])*2.f*PI/2000.f)/gear;
+        
+        
         
         // angular velocity in rad/s
         currentVelocity = (static_cast<int32_t>(rpdo_mapped[0x606C][0])*PI/30.f)/gear;
@@ -914,23 +919,36 @@ private:
         
         angularCorrection = intCtrl.getControlSignal(currentTorque, dt_us/1000000.f);
         
-        controlSignal = pidController.getControlSignal(currentPosition + angularCorrection, currentVelocity, 0)/motorzaoTorqueConstant/1e6;
-
-//        std::cout   << std::setw(10) << "pos: "      << std::setw(10) << std::setprecision(5) << currentPosition
-//                    << std::setw(10) << "vel: "      << std::setw(10) << std::setprecision(5) << currentVelocity
-//                    << std::setw(10) << "ctrl: "     << std::setw(10) << std::setprecision(5) << controlSignal
-//                    << std::setw(10) << "sensor: "   << std::setw(10) << std::setprecision(5) << currentTorque
-//                    << std::endl;
-    
+        controlSignal = pidController.getControlSignal(currentPosition + angularCorrection, currentVelocity, 0); // controlSignal sai daqui em Nm
+        
+        motorCurrent_mA = controlSignal/(motorzaoTorqueConstant); // precisamos de controlSignal em mili ampere
+        
+        constexpr int w = 12;
+        
+        if (counter == maxCounter) {
+            std::cout   << std::setw(10) << "pos: "      << std::setw(10) << std::setprecision(5) << currentPosition
+            << std::setw(w) << "vel: "      << std::setw(w-2) << std::setprecision(5) << currentVelocity
+            << std::setw(w) << "motor mA: "     << std::setw(w-2) << std::setprecision(5) << motorCurrent_mA
+            << std::setw(w) << "sensor: "   << std::setw(w-2) << std::setprecision(5) << currentTorque
+            << std::setw(w) << "from motor:" << std::setw(w-2) << static_cast<int32_t>(rpdo_mapped[0x6064][0])
+            << std::setw(w) << "action P:" << std::setw(w-2) << std::setprecision(5) << pidController.controlActionP
+            << std::setw(w) << "action D:" << std::setw(w-2) << std::setprecision(5) << pidController.controlActionD
+            << std::endl;
+            
+            counter = 0;
+        }
+        
+        counter ++;
+        
         currentCurrent = static_cast<int16_t>(rpdo_mapped[0x6078][0]);
-
-        if (std::fabs(controlSignal) > 5000) {
-            controlSignal = 5000 * ( (float{0} < controlSignal) - (controlSignal < float{0}) );
+        
+        if (std::fabs(motorCurrent_mA) > 5000) {
+            motorCurrent_mA = 5000 * ( (float{0} < motorCurrent_mA) - (motorCurrent_mA < float{0}) );
         }
         
         if(!sendingPlayerDataATM) {
     
-            tpdo_mapped[0x2030][0] = static_cast<int16_t>(controlSignal);
+            tpdo_mapped[0x2030][0] = static_cast<int16_t>(motorCurrent_mA);
             tpdo_mapped[0x6040][0] = static_cast<uint16_t>(0x0003);
     
     
@@ -992,9 +1010,10 @@ public:
     float currentVelocity;
     float currentTorque;
     float currentCurrent;
-    float motorzaoTorqueConstant = 38.5f;
+    float motorzaoTorqueConstant = 38.5f*1e-3; // 0.0385 Nm/A
     float gear = 3.5f;
     float controlSignal = 0;
+    float motorCurrent_mA = 0;
     
     float angularCorrection = 0;
 };
