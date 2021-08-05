@@ -911,7 +911,8 @@ private:
         
 #ifdef USE_FORCETORQUE_SENSOR
         //currentTorque from force-torque-sensor
-        currentTorque = sharedTZ-(-0.019669075714286);
+//        currentTorque = sharedTZ-(-0.019669075714286);
+        currentTorque = sharedTZ-(-0.045530137254902);
 #else
         currentTorque = 0;
 #endif
