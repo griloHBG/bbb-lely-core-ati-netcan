@@ -24,7 +24,11 @@ public:
         
         errorPositionSum += errorPosition * dt;
         
-        float controlSignal = kp * errorPosition + kd * errorVelocity + ki * errorPositionSum;
+        controlActionP = kp * errorPosition;
+        controlActionD = kd * errorVelocity;
+        controlActionI = ki * errorPositionSum;
+        
+        float controlSignal = controlActionP + controlActionD + controlActionI;
         
         return controlSignal;
     }
@@ -39,6 +43,10 @@ public:
     float errorVelocity;
     float referencePosition;
     float referenceVelocity;
+    
+    float controlActionP;
+    float controlActionI;
+    float controlActionD;
 };
 
 
