@@ -14,18 +14,33 @@ public:
     
     float getControlSignal(float currentTorque, float dt) {
         float controlSignal;
+        
+        //antigo errado, mas funcional
+        //controlSignal = (2 * (referenceTorque - currentTorque) + prevActionSignal * (2 * By - Ky * dt)) / (2 * By + Ky * dt);
+        
+        //novo, usando tustin, mas nao funcional: angularCorrection fica quase constante > 1.3 rad
+//        controlSignal = (4*By*prevActionSignal + (Ky*dt - 2*By)*prevprevActionSignal + 2*dt*(currentTorque - prevTorque)) / (2*By + Ky*dt);
+//        controlSignal = (4*By*prevActionSignal + (Ky*dt - 2*By)*prevprevActionSignal + 2*dt*(-currentTorque + prevTorque)) / (2*By + Ky*dt);
+        
+        //novo, usando euler, funcional, baraio
+        controlSignal = (2*By*prevActionSignal + (Ky*dt)*prevprevActionSignal + 2*dt*(-currentTorque)) / (2*By + Ky*dt);
     
-        controlSignal = (2 * (referenceTorque - currentTorque) + lastActionSignal * (2 * By - Ky * dt)) / (2 * By + Ky * dt);
-    
-        lastActionSignal = controlSignal;
+        prevprevActionSignal = prevActionSignal;
+        prevActionSignal = controlSignal;
+        
+        prevTorque = currentTorque;
         
         return controlSignal;
     }
     
 public:
+    
+    
     const float& Ky;
     const float& By;
-    float lastActionSignal = 0; // qa
+    float prevActionSignal = 0; // q[k-1] rad
+    float prevprevActionSignal = 0; // q[k-2] rad
+    float prevTorque = 0; // tau[k-1] Nm
     float referenceTorque = 0;
     float lastVelocity = 0;
     float lastVelocityFiltered = 0;
