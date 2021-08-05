@@ -934,6 +934,7 @@ private:
             << std::setw(w) << "from motor:" << std::setw(w-2) << static_cast<int32_t>(rpdo_mapped[0x6064][0])
             << std::setw(w) << "action P:" << std::setw(w-2) << std::setprecision(5) << pidController.controlActionP
             << std::setw(w) << "action D:" << std::setw(w-2) << std::setprecision(5) << pidController.controlActionD
+            << std::setw(w) << "ang corr:" << std::setw(w-2) << std::setprecision(5) << angularCorrection
             << std::endl;
             
             counter = 0;
