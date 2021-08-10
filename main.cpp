@@ -41,6 +41,7 @@
 #include <thread>
 #include <atomic>
 #include <condition_variable>
+#include <queue>
 #include "PID.h"
 #include "InteractionController.h"
 
@@ -627,15 +628,44 @@ constexpr float PI = 3.141596f;
 
 //constexpr float referencePosition = -PI/3.f;
 constexpr float referencePosition = 0;//+PI/6.f;
-constexpr float gainP = 400;
+constexpr float gainP = 150;
 constexpr float gainI = 0.f;
-constexpr float gainD = 5/2;
+//constexpr float gainD = 5/2;
+constexpr float gainD = 10;
 
 float gainKy = 50;
 float gainBy = 50;
 
 PID pidController{gainP, gainI, gainD, referencePosition};
 InteractionController intCtrl{gainKy, gainBy};
+
+template <typename T, size_t N>
+class MovingAverage
+{
+public:
+    MovingAverage& push(T sample)
+    {
+        total_ += sample;
+        if (num_samples_ < N)
+            samples_[num_samples_++] = sample;
+        else
+        {
+            T& oldest = samples_[num_samples_++ % N];
+            total_ -= oldest;
+            oldest = sample;
+        }
+        return *this;
+    }
+
+    double getAverage() const {
+        return total_ / std::min(num_samples_, N);
+    }
+
+private:
+    T samples_[N];
+    size_t num_samples_{0};
+    T total_{0};
+};
 
 
     // Get time stamp in microseconds. From here: https://stackoverflow.com/a/49066369/6609908
@@ -896,18 +926,27 @@ private:
     int counter = 0;
     int maxCounter = 50;
     
+    MovingAverage<double, 30> velocityMovingAvg;
+    
+    float prevPosition = 0; // previous position [rad]
+    
     void OnSync(uint8_t cnt, const time_point& t) noexcept override {
         currentTime_us = micros();
         dt_us = currentTime_us - lastTime_us;
         
         //for PID controller
         // angular position in radians
+        
+        prevPosition = currentPosition;
+        
         currentPosition = (static_cast<int32_t>(rpdo_mapped[0x6064][0])*2.f*PI/2000.f)/gear;
         
         
         
         // angular velocity in rad/s
-        currentVelocity = (static_cast<int32_t>(rpdo_mapped[0x606C][0])*PI/30.f)/gear;
+        //currentVelocity = (static_cast<int32_t>(rpdo_mapped[0x606C][0])*PI/30.f)/gear;
+        currentVelocity = (currentPosition - prevPosition) / (dt_us / 1e6);
+        currentVelocity = velocityMovingAvg.push(currentVelocity).getAverage();
         
 #ifdef USE_FORCETORQUE_SENSOR
         //currentTorque from force-torque-sensor
@@ -918,7 +957,8 @@ private:
 #endif
         
         
-        angularCorrection = intCtrl.getControlSignal(currentTorque, dt_us/1000000.f);
+        //angularCorrection = intCtrl.getControlSignal(currentTorque, dt_us/1000000.f);
+        angularCorrection = 0;
         
         controlSignal = pidController.getControlSignal(currentPosition + angularCorrection, currentVelocity, 0); // controlSignal sai daqui em Nm
         
