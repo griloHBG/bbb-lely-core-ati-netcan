@@ -68,6 +68,14 @@ std::atomic<bool> sendingPlayerDataATM{false};
 std::condition_variable sendingPlayerDataCV;
 std::mutex sendingPlayerDataMTX;
 
+std::atomic<bool> invertSpline{false};
+
+std::array<float, 200> referenceThetaCW{};
+std::array<float, 200> referenceThetaCCW{};
+
+std::array<float, 200>* currentSplinePtr = &referenceThetaCW;
+int counterSpline = 0;
+
 void printCANFrame(const CANframe&& frame)
 {
     std::cout << frame.can_id << " : ";
@@ -667,6 +675,33 @@ private:
     T total_{0};
 };
 
+template <int timeSpan /*seconds*/, int dt_ms /*milli_seconds*/>
+void spline(float initialTheta, std::array<float, static_cast<int>(timeSpan / (dt_ms/1e3))>& theta) {
+    theta[0] = initialTheta;
+    
+    float thetal = -1*((float{0} < initialTheta) - (initialTheta < float{0})) * PI/6;
+    
+    float currentTime = 0;
+    
+    for(auto& tt : theta) {
+        tt = thetal*(20* powf(currentTime,3)
+                    -15*powf(currentTime,4)
+                    +3*powf(currentTime,5)/(16))
+                    +theta[0];
+        currentTime += dt_ms/1e3;
+    }
+    
+    /*
+     *  t = np.arange(t0,2+t0,.01)
+     *  theta = np.zeros(t.shape[0])
+     *  theta[0] = -np.pi/3
+     *  thetal = np.pi
+     *  for i, ti in enumerate(t[1:]):
+     *      theta[i+1] = thetal*((20*ti**3-15*ti**4+3*ti**5)/(16))+theta[0]
+     */
+    
+}
+
 
     // Get time stamp in microseconds. From here: https://stackoverflow.com/a/49066369/6609908
 uint64_t micros()
@@ -960,6 +995,11 @@ private:
         //angularCorrection = intCtrl.getControlSignal(currentTorque, dt_us/1000000.f);
         angularCorrection = 0;
         
+        if (counterSpline < 199) {
+            counterSpline++;
+        }
+        
+        pidController.setReference((*currentSplinePtr)[counterSpline], 0);
         controlSignal = pidController.getControlSignal(currentPosition + angularCorrection, currentVelocity, 0); // controlSignal sai daqui em Nm
         
         motorCurrent_mA = controlSignal/(motorzaoTorqueConstant); // precisamos de controlSignal em mili ampere
@@ -1061,8 +1101,8 @@ public:
 };
 
 class GameStuff {
-public:
     
+public:
     int sockUDPCommunication;
     int sockTCPCommunication, sockTCPClient;
     char recvMessage[1024];
@@ -1298,6 +1338,15 @@ void gameSendData (GameStuff* gs) {
             gainKy = controllerInfo["k"];
         
         }
+        else if (strcmp(buffer, "invert the spline") == 0) {
+            if (currentSplinePtr == &referenceThetaCCW) {
+                currentSplinePtr = &referenceThetaCW;
+            }
+            else {
+                currentSplinePtr = &referenceThetaCCW;
+            }
+            counterSpline = 0;
+        }
         else {
             std::cout << "wrong msg: " << buffer << std::endl;
         }
@@ -1306,6 +1355,10 @@ void gameSendData (GameStuff* gs) {
 
 int
 main() {
+    
+    spline<2, 10>(-PI/12, referenceThetaCCW);
+    spline<2, 10>( PI/12, referenceThetaCW);
+    
     // Initialize the I/O library. This is required on Windows, but a no-op on
     // Linux (for now).
     io::IoGuard io_guard;
